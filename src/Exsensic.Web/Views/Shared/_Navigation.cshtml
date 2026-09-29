@@ -1,0 +1,31 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var isHome = controller == "Home" && action == "Index";
+    var isPrivacy = controller == "Home" && action == "Privacy";
+}
+<nav class="navbar navbar-expand-md site-navigation" aria-label="Main navigation">
+    <div class="page-container">
+        <a class="site-brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="Exsensic home">
+            <span class="brand-mark" aria-hidden="true">E</span>
+            Exsensic
+        </a>
+        <button class="navbar-toggler navigation-toggle" type="button"
+                data-bs-toggle="collapse" data-bs-target="#primary-navigation"
+                aria-controls="primary-navigation" aria-expanded="false">
+            Menu
+        </button>
+        <div id="primary-navigation" class="collapse navbar-collapse justify-content-end">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index"
+                       aria-current="@(isHome ? "page" : null)">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy"
+                       aria-current="@(isPrivacy ? "page" : null)">Privacy</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

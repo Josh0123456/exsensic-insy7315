@@ -1,8 +1,70 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Creative services for your business";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="hero" aria-labelledby="hero-heading">
+    <div>
+        <p class="eyebrow">Exsensic / Digital &amp; creative</p>
+        <h1 id="hero-heading">Give your business a stronger digital presence.</h1>
+        <p class="hero-intro">Photography, websites and social content that help your business show up with clarity and confidence.</p>
+        <div class="hero-actions">
+            <button class="button-primary" type="button" disabled aria-describedby="booking-availability">Book a service</button>
+            <p id="booking-availability" class="availability-note">Online booking is coming soon.</p>
+        </div>
+    </div>
+    <div class="hero-summary">
+        <h2>Creative thinking.<br />Practical impact.</h2>
+        <p>Exsensic is a digital agency helping businesses bring their brands to life, from the images people notice to the websites and content they connect with.</p>
+    </div>
+</section>
+
+<section class="content-section" aria-labelledby="services-heading">
+    <p class="eyebrow">What we do</p>
+    <h2 id="services-heading">A fresh perspective on your brand.</h2>
+    <p class="section-intro">Four ways to make your business more visible, memorable and easy to connect with.</p>
+    <ul class="service-grid" role="list">
+        <li class="service-card">
+            <span class="service-number" aria-hidden="true">01 /</span>
+            <h3>Photoshoots</h3>
+            <p>Thoughtful photography to showcase your people, products and brand.</p>
+        </li>
+        <li class="service-card">
+            <span class="service-number" aria-hidden="true">02 /</span>
+            <h3>Websites</h3>
+            <p>A clear, professional online home for your business.</p>
+        </li>
+        <li class="service-card">
+            <span class="service-number" aria-hidden="true">03 /</span>
+            <h3>Instagram</h3>
+            <p>Visual content that tells your story and connects with your audience.</p>
+        </li>
+        <li class="service-card">
+            <span class="service-number" aria-hidden="true">04 /</span>
+            <h3>TikTok</h3>
+            <p>Short-form video that brings your brand's personality into focus.</p>
+        </li>
+    </ul>
+</section>
+
+<section class="content-section" aria-labelledby="booking-heading">
+    <p class="eyebrow">From idea to action</p>
+    <h2 id="booking-heading">How booking works</h2>
+    <p class="section-intro">When online booking opens, here is how you will request a service.</p>
+    <ol class="booking-steps" role="list">
+        <li>
+            <span class="step-label">Step 1</span>
+            <h3>Choose a service &amp; time</h3>
+            <p>Find the right service and select an available time slot.</p>
+        </li>
+        <li>
+            <span class="step-label">Step 2</span>
+            <h3>Tell us what you need</h3>
+            <p>Share your requirements so the team understands your goals.</p>
+        </li>
+        <li>
+            <span class="step-label">Step 3</span>
+            <h3>Send your request</h3>
+            <p>Submit your booking request for the team to review and confirm.</p>
+        </li>
+    </ol>
+</section>
