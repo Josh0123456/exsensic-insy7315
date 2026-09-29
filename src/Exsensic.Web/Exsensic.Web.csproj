@@ -4,4 +4,8 @@
     <ProjectReference Include="..\Exsensic.Contracts\Exsensic.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.1.2" />
+  </ItemGroup>
+
 </Project>

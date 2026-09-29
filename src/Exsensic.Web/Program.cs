@@ -1,19 +1,25 @@
+using Exsensic.Web.Hosting;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Hosting (Josh): telemetry, proxy headers, health checks, Kestrel settings.
+builder.Services.AddExsensicHosting(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+// Hosting (Josh): must run first so later middleware sees the real scheme and client IP.
+// Also adds HSTS and HTTPS redirection outside Development.
+app.UseExsensicHosting();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
 }
 
-app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthorization();
