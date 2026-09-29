@@ -1,15 +1,18 @@
 :root {
-    --brand: #0b706b;
-    --brand-strong: #07524e;
-    --ink: #172c3c;
-    --ink-muted: #52636f;
-    --surface: #ffffff;
-    --surface-alt: #f2f5f4;
-    --border: #cdd8d7;
-    --success: #24653c;
-    --warning: #805800;
-    --danger: #a52e3e;
-    --info: #285f9c;
+    color-scheme: dark;
+    --brand: #c4f455;
+    --brand-strong: #a9d83f;
+    --ink: #f5f6f2;
+    --ink-muted: #b5b9b1;
+    --surface: #20231f;
+    --surface-alt: #121511;
+    --border: #454c40;
+    --control-border: #85907c;
+    --on-brand: #121511;
+    --success: #7fe0a7;
+    --warning: #f5ce72;
+    --danger: #ff9eaa;
+    --info: #94caff;
 
     /* Always display a written label alongside a booking status colour. */
     --status-requested: var(--warning);

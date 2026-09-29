@@ -1,0 +1,76 @@
+@model SlotPickerViewModel
+@{
+    var selectedDate = Model.Dates.FirstOrDefault(day => day.Date == Model.SelectedDate && day.IsAvailable)
+        ?? Model.Dates.FirstOrDefault(day => day.IsAvailable);
+}
+<div id="@Model.Id" class="slot-picker" data-slot-picker>
+    <p id="@(Model.Id)-timezone" class="text-muted-ui">Times shown in @Model.TimeZoneLabel.</p>
+    @if (Model.IsDisabled)
+    {
+        <p>Time selection is currently unavailable.</p>
+    }
+    @if (Model.Dates.Count == 0)
+    {
+        <partial name="_EmptyState" model="@(new EmptyStateViewModel { Title = "No dates available", Message = Model.EmptyMessage })" />
+    }
+    else
+    {
+        <fieldset class="date-choices" disabled="@Model.IsDisabled">
+            <legend>Choose a date</legend>
+            <div class="date-options">
+                @for (var index = 0; index < Model.Dates.Count; index++)
+                {
+                    var day = Model.Dates[index];
+                    var isSelected = day == selectedDate;
+                    <button class="date-choice" type="button" data-slot-date
+                            aria-controls="@(Model.Id)-day-@index" aria-pressed="@isSelected.ToString().ToLowerInvariant()"
+                            disabled="@(!day.IsAvailable)">
+                        <span>@day.Date.ToString("ddd, d MMM yyyy")</span>
+                        @if (!day.IsAvailable)
+                        {
+                            <span class="choice-note">Unavailable</span>
+                        }
+                        <span class="date-selection-label" hidden="@(!isSelected)">Selected</span>
+                    </button>
+                }
+            </div>
+        </fieldset>
+        @if (selectedDate is null)
+        {
+            <partial name="_EmptyState" model="@(new EmptyStateViewModel { Title = "No selectable dates", Message = Model.EmptyMessage })" />
+        }
+        @for (var index = 0; index < Model.Dates.Count; index++)
+        {
+            var day = Model.Dates[index];
+            var isSelected = day == selectedDate;
+            <fieldset id="@(Model.Id)-day-@index" class="slot-panel" data-slot-panel
+                      hidden="@(!isSelected)" disabled="@(Model.IsDisabled || !isSelected)"
+                      aria-describedby="@(Model.Id)-timezone">
+                <legend>Choose a time for @day.Date.ToString("d MMMM yyyy")</legend>
+                @if (day.Slots.Count == 0 || !day.Slots.Any(slot => slot.IsAvailable))
+                {
+                    <p class="slot-empty">@Model.EmptyMessage</p>
+                }
+                <div class="slot-options">
+                    @for (var slotIndex = 0; slotIndex < day.Slots.Count; slotIndex++)
+                    {
+                        var slot = day.Slots[slotIndex];
+                        var inputId = $"{Model.Id}-day-{index}-slot-{slotIndex}";
+                        <label class="slot-choice" for="@inputId">
+                            <input id="@inputId" type="radio" name="@Model.InputName" value="@slot.Id"
+                                   checked="@(isSelected && slot.IsAvailable && slot.Id == Model.SelectedSlotId)"
+                                   disabled="@(!slot.IsAvailable)" />
+                            <span>
+                                <span>@slot.StartTime.ToString("HH:mm")@(slot.EndTime is TimeOnly end ? $" – {end:HH:mm}" : "")</span>
+                                @if (!slot.IsAvailable)
+                                {
+                                    <span class="choice-note">Unavailable@(string.IsNullOrWhiteSpace(slot.UnavailableReason) ? "" : $": {slot.UnavailableReason}")</span>
+                                }
+                            </span>
+                        </label>
+                    }
+                </div>
+            </fieldset>
+        }
+    }
+</div>

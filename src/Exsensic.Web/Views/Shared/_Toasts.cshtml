@@ -1,0 +1,15 @@
+@{
+    // Read each TempData key once. Razor encodes messages; never render feedback with Html.Raw.
+    var successMessage = TempData[ToastKeys.Success] as string;
+    var errorMessage = TempData[ToastKeys.Error] as string;
+}
+<div class="toast-region" role="status" aria-live="polite" aria-atomic="true">
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="feedback-message feedback-success"><strong>Success</strong><p>@successMessage</p></div>
+    }
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="feedback-message feedback-error"><strong>Error</strong><p>@errorMessage</p></div>
+    }
+</div>
