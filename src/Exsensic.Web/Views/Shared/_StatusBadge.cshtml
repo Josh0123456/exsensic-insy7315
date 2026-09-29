@@ -1,0 +1,13 @@
+@model StatusBadgeViewModel
+@{
+    // Only map the shared contract's exact names. No transitions or permissions are decided here.
+    var statusClass = Model.Status switch
+    {
+        "Requested" => "status-requested",
+        "Confirmed" => "status-confirmed",
+        "Completed" => "status-completed",
+        "Cancelled" => "status-cancelled",
+        _ => throw new ArgumentException("Unsupported booking status.", nameof(Model.Status))
+    };
+}
+<span class="status-badge @statusClass">@Model.Status</span>

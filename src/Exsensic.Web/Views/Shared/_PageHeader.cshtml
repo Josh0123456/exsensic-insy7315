@@ -1,0 +1,18 @@
+@model PageHeaderViewModel
+<header class="page-heading">
+    <div>
+        @if (!string.IsNullOrWhiteSpace(Model.Eyebrow))
+        {
+            <p class="eyebrow">@Model.Eyebrow</p>
+        }
+        <h1>@Model.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
+        {
+            <p class="text-muted-ui">@Model.Subtitle</p>
+        }
+    </div>
+    @if (!string.IsNullOrWhiteSpace(Model.ActionText) && Url.IsLocalUrl(Model.ActionUrl))
+    {
+        <a class="button-primary" href="@Model.ActionUrl">@Model.ActionText</a>
+    }
+</header>

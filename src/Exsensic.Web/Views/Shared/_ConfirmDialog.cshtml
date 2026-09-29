@@ -1,0 +1,10 @@
+@model ConfirmDialogViewModel
+<dialog id="@Model.Id" class="confirm-dialog" data-confirm-dialog-panel
+        aria-labelledby="@(Model.Id)-title" aria-describedby="@(Model.Id)-message">
+    <h2 id="@(Model.Id)-title">@Model.Title</h2>
+    <p id="@(Model.Id)-message">@Model.Message</p>
+    <div class="component-actions">
+        <button type="button" class="button-secondary" data-dialog-cancel autofocus>@Model.CancelText</button>
+        <button type="button" class="button-primary" data-dialog-confirm>@Model.ConfirmText</button>
+    </div>
+</dialog>
