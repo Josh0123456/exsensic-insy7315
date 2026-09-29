@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Exsensic.Contracts\Exsensic.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

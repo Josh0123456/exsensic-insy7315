@@ -1,0 +1,22 @@
+<!--
+  Settings shared by every project in the solution (docs/CONTRACTS.md §1).
+  MSBuild imports this file automatically, so individual .csproj files stay small.
+-->
+<Project>
+
+  <PropertyGroup>
+    <!-- Every project targets .NET 10; the SDK itself is pinned in global.json. -->
+    <TargetFramework>net10.0</TargetFramework>
+
+    <!-- Nullable reference types catch null bugs at compile time instead of at runtime. -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Warnings fail the build locally and in CI, so problems are fixed when they appear. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Apply the .editorconfig code-style rules during build, not only in the IDE. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+</Project>

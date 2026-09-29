@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Exsensic.Core\Exsensic.Core.csproj" />
+    <ProjectReference Include="..\Exsensic.Contracts\Exsensic.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
