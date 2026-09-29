@@ -1,0 +1,144 @@
+# Continuous deployment to staging: every push to develop is tested, published and deployed
+# to the staging web and API apps on Azure App Service, then smoke-tested.
+name: cd-staging
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # lets azure/login exchange a short-lived GitHub token for Azure access (OIDC)
+
+# Deployments queue up instead of cancelling each other halfway through.
+concurrency:
+  group: cd-staging
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # App names can be overridden with repository variables (Settings → Secrets and variables →
+  # Actions → Variables) if the defaults were taken in Azure.
+  WEB_APP_NAME: ${{ vars.STAGING_WEB_APP_NAME || 'app-exsensic-web-staging' }}
+  API_APP_NAME: ${{ vars.STAGING_API_APP_NAME || 'app-exsensic-api-staging' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET from global.json
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # Never deploy code whose unit tests fail.
+      - name: Run unit tests
+        run: dotnet test tests/Exsensic.UnitTests/Exsensic.UnitTests.csproj --configuration Release
+
+      - name: Publish web app
+        run: dotnet publish src/Exsensic.Web/Exsensic.Web.csproj --configuration Release --output publish/web
+
+      - name: Publish API
+        run: dotnet publish src/Exsensic.Api/Exsensic.Api.csproj --configuration Release --output publish/api
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: publish/web
+          retention-days: 14
+
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: publish/api
+          retention-days: 14
+
+  deploy:
+    needs: build
+    # Switched on by the repository variable STAGING_DEPLOY_ENABLED=true once the Azure resources
+    # and the three AZURE_* secrets exist. Until then the build still runs and deploy is skipped.
+    if: vars.STAGING_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web
+          path: web
+
+      - name: Download API artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: api
+
+      # OIDC login: Azure trusts this repository's develop branch through a federated credential
+      # on the deploy identity, so no Azure password or key is stored in GitHub.
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # The API goes first so the new web app never calls an older API.
+      - name: Deploy API to staging
+        id: deploy-api
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.API_APP_NAME }}
+          package: api
+          startup-command: dotnet Exsensic.Api.dll
+
+      - name: Deploy web app to staging
+        id: deploy-web
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.WEB_APP_NAME }}
+          package: web
+          startup-command: dotnet Exsensic.Web.dll
+
+      # The apps restart after a deployment, so allow up to about 5 minutes for them to answer.
+      # /health/ready on the API also proves it can reach its database (step 10).
+      - name: Smoke test staging
+        env:
+          API_URL: ${{ steps.deploy-api.outputs.webapp-url }}
+          WEB_URL: ${{ steps.deploy-web.outputs.webapp-url }}
+        run: |
+          check() {
+            for attempt in $(seq 1 20); do
+              status=$(curl --silent --location --output /dev/null --write-out "%{http_code}" --max-time 30 "$1" || true)
+              if [ "$status" = "200" ]; then
+                echo "OK  $1"
+                return 0
+              fi
+              echo "Waiting for $1 (attempt $attempt, status $status)"
+              sleep 15
+            done
+            echo "::error::$1 did not return 200 after deployment."
+            return 1
+          }
+          check "$API_URL/health"
+          check "$API_URL/health/ready"
+          check "$WEB_URL/health"
+          check "$WEB_URL/"
+
+      - name: Write deployment summary
+        if: always()
+        run: |
+          {
+            echo "### Staging deployment"
+            echo "- Commit: \`${GITHUB_SHA::7}\`"
+            echo "- API: ${{ steps.deploy-api.outputs.webapp-url }}"
+            echo "- Web: ${{ steps.deploy-web.outputs.webapp-url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
