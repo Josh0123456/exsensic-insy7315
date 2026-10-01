@@ -1,0 +1,17 @@
+@model Exsensic.Web.Models.Bookings.BookingDetailViewModel
+@{ ViewData["Title"] = "Assigned booking"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = Model.Booking?.Reference ?? "Assigned booking", Eyebrow = "Staff workspace", Subtitle = Model.Booking?.ServiceName })' />
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable)
+{
+    <partial name="_BookingInformation" model="Model" />
+    @if (Model.CanComplete)
+    {
+        <form asp-action="Complete" asp-route-id="@Model.Id" method="post" data-single-submit>
+            <input asp-for="RowVersion" type="hidden" />
+            <button type="submit" class="button-primary" data-confirm-dialog="complete-booking">Mark as completed</button>
+        </form>
+        <partial name="_ConfirmDialog" model='@(new ConfirmDialogViewModel { Id = "complete-booking", Title = "Mark this work as completed?", Message = "Confirm that the assigned work has been delivered. The service will check whether completion is allowed.", ConfirmText = "Mark as completed" })' />
+    }
+}
+<a class="text-link" asp-action="Index">Back to schedule</a>

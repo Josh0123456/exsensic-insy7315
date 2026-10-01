@@ -1,0 +1,13 @@
+@model Exsensic.Web.Models.Bookings.BookingDetailViewModel
+@{ ViewData["Title"] = "Booking details"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = Model.Booking?.Reference ?? "Booking details", Eyebrow = "Your booking", Subtitle = Model.Booking?.ServiceName })' />
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable)
+{
+    <partial name="_BookingInformation" model="Model" />
+    <div class="component-actions">
+        @if (Model.CanReschedule) { <a class="button-secondary" asp-action="Reschedule" asp-route-id="@Model.Id">Reschedule booking</a> }
+        @if (Model.CanCancel) { <a class="button-secondary" asp-action="Cancel" asp-route-id="@Model.Id">Review cancellation</a> }
+    </div>
+}
+<a class="text-link" asp-action="Index">Back to my bookings</a>

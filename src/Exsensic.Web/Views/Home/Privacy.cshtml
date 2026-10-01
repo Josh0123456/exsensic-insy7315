@@ -1,6 +1,7 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
-}
-<h1>@ViewData["Title"]</h1>
-
-<p>Use this page to detail your site's privacy policy.</p>
+@{ ViewData["Title"] = "Privacy"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Your privacy matters.", Eyebrow = "Privacy", Subtitle = "Clear information about using the Exsensic booking website." })' />
+<section class="detail-panel" aria-labelledby="cookies-heading">
+    <h2 id="cookies-heading">Necessary security cookies</h2>
+    <p>This website uses necessary cookies to protect form submissions and maintain signed-in sessions.</p>
+    <p>The full Exsensic privacy notice is being prepared. Please contact Exsensic through your usual channel if you have a question about your information.</p>
+</section>

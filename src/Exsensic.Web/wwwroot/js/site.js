@@ -19,6 +19,10 @@
 
     document.addEventListener("submit", (event) => {
         const form = event.target;
+        if (form.dataset.submitting === "true") {
+            event.preventDefault();
+            return;
+        }
         if (approvedForms.delete(form)) return;
         const trigger = event.submitter;
         if (!trigger?.matches("[data-confirm-dialog]")) return;
@@ -87,4 +91,28 @@
             });
         });
     });
+
+    // Run after confirmation and form validation. Keep the submitter enabled so its
+    // name/value is included; guard further submissions while navigation is pending.
+    document.addEventListener("submit", (event) => {
+        const form = event.target;
+        if (!form.matches("[data-single-submit]") || event.defaultPrevented) return;
+        if (form.dataset.submitting === "true") {
+            event.preventDefault();
+            return;
+        }
+        queueMicrotask(() => {
+            if (event.defaultPrevented) return;
+            form.dataset.submitting = "true";
+            form.setAttribute("aria-busy", "true");
+        });
+    });
+    window.addEventListener("pageshow", () => {
+        document.querySelectorAll("[data-single-submit]").forEach((form) => {
+            delete form.dataset.submitting;
+            form.removeAttribute("aria-busy");
+        });
+    });
+    const summary = document.querySelector("[data-validation-summary].validation-summary-errors");
+    if (summary) summary.focus();
 })();

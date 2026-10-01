@@ -1,5 +1,6 @@
 using Exsensic.Web.Hosting;
 using Exsensic.Web.ApiClients;
+using Exsensic.Web.Journeys;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,6 +34,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<JourneyClock>();
+builder.Services.AddScoped<AccountSession>();
+// Journey adapters remain unregistered until their real shared DTOs and API clients are merged.
 
 // Validate once at startup. Development may use loopback HTTP; deployments must use HTTPS.
 var configuredBaseUrl = builder.Configuration["Api:BaseUrl"];
@@ -78,7 +83,7 @@ app.UseExsensicHosting();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Error");
 }
 
 app.UseRouting();

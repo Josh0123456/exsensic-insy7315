@@ -1,0 +1,42 @@
+@model Exsensic.Web.Models.Book.RequirementsStepViewModel
+@for (var index = 0; index < Model.Fields.Count; index++)
+{
+    var field = Model.Fields[index];
+    var name = $"Requirements[{field.Key}]";
+    var id = $"requirement-{index}";
+    var invalid = ViewData.ModelState.TryGetValue(name, out var state) && state.Errors.Count > 0;
+    Model.Requirements.TryGetValue(field.Key, out var value);
+    <div class="form-field">
+        <label for="@id">@field.Label @(field.Required ? "(required)" : "(optional)")</label>
+        @if (field.InputType == "number" && (field.Min.HasValue || field.Max.HasValue))
+        {
+            <p class="field-hint">@(field.Min.HasValue ? $"Minimum: {field.Min}. " : "")@(field.Max.HasValue ? $"Maximum: {field.Max}." : "")</p>
+        }
+        @if (!Exsensic.Web.Journeys.RequirementForm.IsSupported(field.InputType))
+        {
+            <p class="field-error">This field is not available yet. Please check back before submitting.</p>
+        }
+        else if (field.InputType == "textarea")
+        {
+            <textarea id="@id" name="@name" rows="5" required="@field.Required" maxlength="@field.MaxLength" aria-invalid="@invalid.ToString().ToLowerInvariant()" aria-describedby="@(id)-error">@value</textarea>
+        }
+        else if (field.InputType == "select")
+        {
+            <select id="@id" name="@name" required="@field.Required" aria-invalid="@invalid.ToString().ToLowerInvariant()" aria-describedby="@(id)-error">
+                <option value="">Choose an option</option>
+                @foreach (var option in field.Options) { <option value="@option" selected="@(value == option)">@option</option> }
+            </select>
+        }
+        else if (field.InputType == "checkbox")
+        {
+            <input id="@id" name="@name" type="checkbox" value="true" checked="@(value == "true")" required="@field.Required" aria-invalid="@invalid.ToString().ToLowerInvariant()" aria-describedby="@(id)-error" />
+        }
+        else
+        {
+            <input id="@id" name="@name" type="@field.InputType" value="@value" required="@field.Required" maxlength="@field.MaxLength"
+                   min="@field.Min?.ToString(System.Globalization.CultureInfo.InvariantCulture)" max="@field.Max?.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                   step="@(field.InputType == "number" ? "any" : null)" aria-invalid="@invalid.ToString().ToLowerInvariant()" aria-describedby="@(id)-error" />
+        }
+        @Html.ValidationMessage(name, null, new { id = $"{id}-error", @class = "field-error" })
+    </div>
+}

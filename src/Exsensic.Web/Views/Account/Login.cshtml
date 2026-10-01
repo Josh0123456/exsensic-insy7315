@@ -1,0 +1,28 @@
+@model Exsensic.Web.Models.Account.LoginViewModel
+@{ ViewData["Title"] = "Sign in"; }
+<div class="account-layout">
+    <div class="account-intro"><p class="eyebrow">Your next creative chapter</p><h1>Good ideas.<br />One place to begin.</h1><p>Sign in to organise your creative projects and keep your bookings in view.</p></div>
+    <section class="form-panel" aria-labelledby="login-heading">
+        <h2 id="login-heading">Welcome back</h2>
+        <partial name="_JourneyFeedback" model="Model" />
+        <form asp-action="Login" method="post" data-single-submit>
+            <input asp-for="ReturnUrl" type="hidden" />
+            <fieldset disabled="@(!Model.IntegrationAvailable)">
+                <legend class="visually-hidden">Sign-in details</legend>
+                <div class="form-field">
+                    <label asp-for="Email">Email address (required)</label>
+                    <input asp-for="Email" type="email" autocomplete="username" aria-describedby="Email-error" />
+                    <span asp-validation-for="Email" id="Email-error" class="field-error"></span>
+</div>
+                <div class="form-field">
+                    <label asp-for="Password">Password (required)</label>
+                    <input asp-for="Password" type="password" autocomplete="current-password" aria-describedby="Password-error" />
+                    <span asp-validation-for="Password" id="Password-error" class="field-error"></span>
+</div>
+                <button type="submit" class="button-primary">Sign in</button>
+            </fieldset>
+        </form>
+        <p class="form-afterword">New to Exsensic? <a asp-action="Register">Create a client account</a>.</p>
+    </section>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

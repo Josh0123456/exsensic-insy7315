@@ -1,0 +1,22 @@
+@model Exsensic.Web.Models.Book.RequirementsStepViewModel
+@{ ViewData["Title"] = "Your requirements"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Tell us what you have in mind.", Eyebrow = "Step 2 of 2", Subtitle = "Share the details that will help the team prepare." })' />
+<ol class="wizard-progress" aria-label="Booking progress"><li><a asp-action="Index" asp-route-serviceId="@Model.ServiceId">1. Time slot</a></li><li aria-current="step">2. Requirements</li></ol>
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable)
+{
+    <div class="booking-context">
+        <div><h2>@Model.ServiceName</h2><p>@Model.SlotSummary</p><a asp-action="Index" asp-route-serviceId="@Model.ServiceId">Change time</a></div>
+        <div><h2>Your contact details</h2><p>@Model.ContactSummary</p><a asp-controller="Account" asp-action="Profile">Edit profile</a></div>
+    </div>
+}
+<form asp-action="Details" asp-route-serviceId="@Model.ServiceId" method="post" data-single-submit class="form-panel">
+    <input asp-for="TimeSlotId" type="hidden" />
+    <fieldset disabled="@(!Model.IntegrationAvailable)">
+        <legend>Project requirements</legend>
+        <p class="field-hint">Fields marked “required” must be completed.</p>
+        <partial name="_RequirementFields" model="Model" />
+        <button class="button-primary" type="submit" disabled="@Model.Fields.Any(field => !Exsensic.Web.Journeys.RequirementForm.IsSupported(field.InputType))">Submit booking request</button>
+        <p class="field-hint">Your request will be reviewed by the team. Submitting does not confirm the booking.</p>
+    </fieldset>
+</form>

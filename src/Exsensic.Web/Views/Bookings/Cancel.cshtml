@@ -1,0 +1,27 @@
+@model Exsensic.Web.Models.Bookings.CancelViewModel
+@{ ViewData["Title"] = "Cancel booking"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Review your cancellation.", Eyebrow = "Cancel booking", Subtitle = "Take a moment to check the booking before cancelling." })' />
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.Detail is not null) { <partial name="_BookingInformation" model="Model.Detail" /> }
+<div class="form-panel">
+    <h2>Before you cancel</h2>
+    <p>Cancelling releases your requested time. You will need to make a new request if you change your mind.</p>
+    @if (Model.CancellationCutoffHours is int hours)
+    {
+        <p class="policy-note">Bookings can't be cancelled within @hours hours of the start.</p>
+    }
+    else
+    {
+        <p class="policy-note">Bookings can't be cancelled within 24 hours of the start under the standard policy. The service checks the current cut-off when you submit.</p>
+    }
+    <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" data-single-submit>
+        <input asp-for="RowVersion" type="hidden" />
+        <fieldset disabled="@(!Model.IntegrationAvailable || Model.Problem?.Code is "concurrency_conflict" or "cancel_window_closed")">
+            <legend class="visually-hidden">Cancellation</legend>
+            <div class="form-field"><label asp-for="Reason"></label><textarea asp-for="Reason" rows="4" aria-describedby="Reason-error"></textarea><span asp-validation-for="Reason" id="Reason-error" class="field-error"></span></div>
+            <button type="submit" class="button-primary" data-confirm-dialog="cancel-booking">Cancel this booking</button>
+        </fieldset>
+    </form>
+    <partial name="_ConfirmDialog" model='@(new ConfirmDialogViewModel { Id = "cancel-booking", Title = "Cancel this booking?", Message = "This sends a cancellation request for the booking shown above.", ConfirmText = "Yes, cancel booking", CancelText = "Keep booking" })' />
+</div>
+<a class="text-link" asp-action="Details" asp-route-id="@Model.Id">Keep booking and return</a>

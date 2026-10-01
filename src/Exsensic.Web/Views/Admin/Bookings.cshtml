@@ -1,0 +1,39 @@
+@model Exsensic.Web.Models.Admin.AdminBookingListViewModel
+@{ ViewData["Title"] = "Manage bookings"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Every booking, in view.", Eyebrow = "Admin bookings", Subtitle = "Filter requests and open a booking to review its details." })' />
+<form asp-action="FilterBookings" method="post" class="filter-form" aria-label="Booking filters">
+    <div class="form-field"><label asp-for="Status">Status</label><select asp-for="Status"><option value="">All statuses</option>@foreach (var status in new[] { "Requested", "Confirmed", "Completed", "Cancelled" }) { <option value="@status">@status</option> }</select><span asp-validation-for="Status" class="field-error"></span></div>
+    <div class="form-field"><label asp-for="From">From date</label><input asp-for="From" type="date" aria-describedby="From-error" /><span asp-validation-for="From" id="From-error" class="field-error"></span></div>
+    <div class="form-field"><label asp-for="To">To date</label><input asp-for="To" type="date" aria-describedby="To-error" /><span asp-validation-for="To" id="To-error" class="field-error"></span></div>
+    <button class="button-primary" type="submit">Apply filters</button>
+    <a class="button-secondary" asp-action="Bookings">Clear filters</a>
+</form>
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable)
+{
+    <h2 class="section-title">Booking results</h2>
+    @if (Model.Rows.Count == 0)
+    {
+        <partial name="_EmptyState" model='@(new EmptyStateViewModel { Title = "No matching bookings", Message = "Try a different status or date range." })' />
+    }
+    else
+    {
+        <div class="desktop-bookings">
+            <table class="booking-table">
+                <caption>Bookings matching the selected filters</caption>
+                <thead><tr><th scope="col">Reference</th><th scope="col">Client</th><th scope="col">Service</th><th scope="col">Date / time</th><th scope="col">Status</th><th scope="col">Staff</th><th scope="col">Details</th></tr></thead>
+                <tbody>@foreach (var row in Model.Rows) { <tr>
+                    <th scope="row">@row.Booking.Reference</th><td>@row.ClientName</td><td>@row.Booking.ServiceName</td>
+                    <td>@row.Booking.Date.ToString("d MMM yyyy")<br />@row.Booking.StartTime?.ToString("HH:mm") SAST</td>
+                    <td><partial name="_StatusBadge" model="@(new StatusBadgeViewModel { Status = row.Booking.BookingStatus })" /></td>
+                    <td>@(row.Booking.AssignedStaff ?? "Not assigned")</td>
+                    <td>@if (Url.IsLocalUrl(row.Booking.DetailsUrl)) { <a href="@row.Booking.DetailsUrl">Review<span class="visually-hidden"> booking @row.Booking.Reference</span></a> }</td>
+                </tr> }</tbody>
+            </table>
+        </div>
+        <div class="mobile-bookings">
+            @foreach (var row in Model.Rows) { <div><p class="eyebrow">@row.ClientName</p><partial name="_BookingCard" model="row.Booking" /></div> }
+        </div>
+        @if (Model.Pager is not null) { <partial name="_Pager" model="Model.Pager" /> }
+    }
+}
