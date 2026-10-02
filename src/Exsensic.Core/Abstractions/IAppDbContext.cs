@@ -20,4 +20,5 @@ public interface IAppDbContext
     DbSet<Notification> Notifications { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
+    Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default);
 }
