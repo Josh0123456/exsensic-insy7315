@@ -3,10 +3,12 @@ using Exsensic.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Exsensic.Data;
 
 /// EF Core context. Inherits Identity so users and roles live in the same DB.
+
 public class ExsensicDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>, IAppDbContext
 {
     public ExsensicDbContext(DbContextOptions<ExsensicDbContext> options) : base(options) { }
@@ -20,6 +22,9 @@ public class ExsensicDbContext : IdentityDbContext<ApplicationUser, IdentityRole
     public DbSet<BookingRequirement> BookingRequirements => Set<BookingRequirement>();
     public DbSet<BookingStatusHistory> BookingStatusHistory => Set<BookingStatusHistory>();
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default)
+        => Database.BeginTransactionAsync(ct);
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
