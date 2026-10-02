@@ -2,11 +2,15 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <!-- These tests drive a real browser against a deployed site. They only run when E2E_BASE_URL
+         is set (the staging pipeline sets it), so a plain `dotnet test` or ci.yml never runs them. -->
+    <IsTestProject Condition="'$(E2E_BASE_URL)' == ''">false</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.63.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
