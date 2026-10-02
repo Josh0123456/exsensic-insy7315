@@ -11,6 +11,6 @@ namespace Exsensic.Contracts.Bookings;
 /// <param name="TimeSlotId">The time slot the client picked.</param>
 /// <param name="Requirements">The client's answers, keyed by requirement field key.</param>
 public sealed record CreateBookingRequest(
-    [Required] Guid ServiceId,
-    [Required] Guid TimeSlotId,
+    [Range(1, int.MaxValue)] int ServiceId,
+    [Range(1, int.MaxValue)] int TimeSlotId,
     [Required] Dictionary<string, string> Requirements);

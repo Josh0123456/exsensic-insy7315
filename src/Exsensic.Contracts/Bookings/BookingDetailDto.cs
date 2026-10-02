@@ -30,12 +30,12 @@ namespace Exsensic.Contracts.Bookings;
 /// <param name="UpdatedAtUtc">When the booking was last changed, in UTC.</param>
 /// <param name="RowVersion">The concurrency token as a base64 string; send it back with any change.</param>
 public sealed record BookingDetailDto(
-    Guid Id,
+    int Id,
     string Reference,
-    Guid ServiceId,
+    int ServiceId,
     string ServiceName,
     ServiceCategory Category,
-    Guid TimeSlotId,
+    int TimeSlotId,
     DateOnly SlotDate,
     TimeOnly StartTime,
     TimeOnly EndTime,

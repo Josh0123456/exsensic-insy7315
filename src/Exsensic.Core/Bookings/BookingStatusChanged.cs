@@ -15,7 +15,7 @@ namespace Exsensic.Core.Bookings;
 /// <param name="ChangedAtUtc">When the action happened, in UTC, taken from the injected TimeProvider.</param>
 /// <param name="Note">An optional note, for example the rejection or cancellation reason.</param>
 public sealed record BookingStatusChanged(
-    Guid BookingId,
+    int BookingId,
     BookingAction Action,
     BookingStatus? FromStatus,
     BookingStatus ToStatus,

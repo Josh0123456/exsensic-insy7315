@@ -20,9 +20,9 @@ namespace Exsensic.Contracts.Bookings;
 /// <param name="StaffName">The assigned staff member's name, or null before the booking is confirmed.</param>
 /// <param name="RequirementsSummary">A short plain-text summary of the requirements for the staff schedule, or null elsewhere.</param>
 public sealed record BookingSummaryDto(
-    Guid Id,
+    int Id,
     string Reference,
-    Guid ServiceId,
+    int ServiceId,
     string ServiceName,
     ServiceCategory Category,
     DateOnly SlotDate,

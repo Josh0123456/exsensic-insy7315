@@ -9,5 +9,5 @@ namespace Exsensic.Contracts.Bookings;
 /// <param name="NewTimeSlotId">The time slot to move the booking to.</param>
 /// <param name="RowVersion">The base64 concurrency token from the last read; a stale value gives 409 concurrency_conflict.</param>
 public sealed record RescheduleBookingRequest(
-    [Required] Guid NewTimeSlotId,
+    [Range(1, int.MaxValue)] int NewTimeSlotId,
     [Required] string RowVersion);

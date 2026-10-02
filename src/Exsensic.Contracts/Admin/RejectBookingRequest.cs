@@ -6,8 +6,8 @@ namespace Exsensic.Contracts.Admin;
 /// Body of PUT /api/v1/admin/bookings/{id}/reject (docs/CONTRACTS.md §5).
 /// A rejection moves the booking to Cancelled and stores the reason with the "Rejected: " prefix.
 /// </summary>
-/// <param name="Reason">Why the booking was rejected. Required, so the client always gets an explanation.</param>
+/// <param name="Reason">Why the booking was rejected. Required, so the client always gets an explanation. At most 490 characters, so it still fits the 500-character CancellationReason column after the "Rejected: " prefix is added.</param>
 /// <param name="RowVersion">The base64 concurrency token from the last read; a stale value gives 409 concurrency_conflict.</param>
 public sealed record RejectBookingRequest(
-    [Required, StringLength(500)] string Reason,
+    [Required, StringLength(490)] string Reason,
     [Required] string RowVersion);

@@ -12,9 +12,9 @@ namespace Exsensic.Contracts.Notifications;
 /// <param name="IsRead">Whether the user has marked it as read.</param>
 /// <param name="CreatedAtUtc">When it was created, in UTC.</param>
 public sealed record NotificationDto(
-    Guid Id,
+    int Id,
     NotificationType Type,
     string Message,
-    Guid? BookingId,
+    int? BookingId,
     bool IsRead,
     DateTimeOffset CreatedAtUtc);
