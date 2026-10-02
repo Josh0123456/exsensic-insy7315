@@ -1,0 +1,43 @@
+@model Exsensic.Web.Models.Bookings.BookingDetailViewModel
+@if (Model.Booking is not null)
+{
+    <section class="detail-panel" aria-labelledby="booking-overview">
+        <h2 id="booking-overview">Booking overview</h2>
+        <dl class="detail-facts">
+            <div><dt>Reference</dt><dd>@Model.Booking.Reference</dd></div>
+            <div><dt>Service</dt><dd>@Model.Booking.ServiceName</dd></div>
+            <div><dt>Date</dt><dd>@Model.Booking.Date.ToString("dddd, d MMMM yyyy")</dd></div>
+            <div><dt>Time (SAST)</dt><dd>@Model.Booking.StartTime?.ToString("HH:mm") @if (Model.Booking.EndTime is TimeOnly end) { <span>– @end.ToString("HH:mm")</span> }</dd></div>
+            <div><dt>Status</dt><dd><partial name="_StatusBadge" model="@(new StatusBadgeViewModel { Status = Model.Booking.BookingStatus })" /></dd></div>
+            @if (!string.IsNullOrWhiteSpace(Model.Booking.AssignedStaff)) { <div><dt>Assigned staff</dt><dd>@Model.Booking.AssignedStaff</dd></div> }
+            @if (!string.IsNullOrWhiteSpace(Model.ClientCompany)) { <div><dt>Company</dt><dd>@Model.ClientCompany</dd></div> }
+            @if (!string.IsNullOrWhiteSpace(Model.ContactSummary)) { <div><dt>Contact</dt><dd>@Model.ContactSummary</dd></div> }
+        </dl>
+    </section>
+    <section class="detail-panel" aria-labelledby="requirements-heading">
+        <h2 id="requirements-heading">Project requirements</h2>
+        @if (Model.Requirements.Count == 0) { <p class="text-muted-ui">No requirement details were supplied.</p> }
+        <dl class="requirement-list">@foreach (var item in Model.Requirements) { <div><dt>@item.Key</dt><dd>@item.Value</dd></div> }</dl>
+    </section>
+    @if (!string.IsNullOrWhiteSpace(Model.CancellationReason))
+    {
+        <section class="detail-panel"><h2>Cancellation or rejection reason</h2><p class="preserve-lines">@Model.CancellationReason</p></section>
+    }
+    @if (Model.History.Count > 0)
+    {
+        <section class="detail-panel" aria-labelledby="history-heading">
+            <h2 id="history-heading">Booking history</h2>
+            <ol class="booking-timeline">
+            @foreach (var entry in Model.History)
+            {
+                <li>
+                    <partial name="_StatusBadge" model="@(new StatusBadgeViewModel { Status = entry.Status })" />
+                    <time datetime="@entry.ChangedAtUtc.ToString("O")">@entry.ChangedAtUtc.ToOffset(TimeSpan.FromHours(2)).ToString("d MMM yyyy, HH:mm") SAST</time>
+                    @if (!string.IsNullOrWhiteSpace(entry.ChangedByName)) { <p>Changed by @entry.ChangedByName</p> }
+                    @if (!string.IsNullOrWhiteSpace(entry.Note)) { <p class="preserve-lines">@entry.Note</p> }
+                </li>
+            }
+            </ol>
+        </section>
+    }
+}

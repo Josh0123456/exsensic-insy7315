@@ -1,0 +1,23 @@
+@model Exsensic.Web.Models.Services.ServiceListViewModel
+@{ ViewData["Title"] = "Creative services"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Find your next creative move.", Eyebrow = "Our services", Subtitle = "Explore the creative and digital services available for your business." })' />
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable)
+{
+    <nav class="filter-chips" aria-label="Service categories">
+        <a asp-action="Index" aria-current="@(string.IsNullOrEmpty(Model.Category) ? "page" : null)">All services</a>
+        @foreach (var category in Model.Categories)
+        {
+            <a asp-action="Index" asp-route-category="@category" aria-current="@(Model.Category == category ? "page" : null)">@category</a>
+        }
+    </nav>
+    <h2 class="section-title">Available services</h2>
+    @if (Model.Services.Count == 0)
+    {
+        <partial name="_EmptyState" model='@(new EmptyStateViewModel { Title = "No services to show", Message = "Try another category or check back later." })' />
+    }
+    else
+    {
+        <div class="service-grid">@foreach (var service in Model.Services) { <partial name="_ServiceCard" model="service" /> }</div>
+    }
+}

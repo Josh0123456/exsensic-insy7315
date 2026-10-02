@@ -1,0 +1,42 @@
+@model Exsensic.Web.Models.Admin.AdminDashboardViewModel
+@inject Microsoft.AspNetCore.Mvc.Infrastructure.IActionDescriptorCollectionProvider Actions
+@{ ViewData["Title"] = "Admin workspace"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Make the next move.", Eyebrow = "Admin workspace", Subtitle = "Review requests and keep creative work moving.", ActionText = "All bookings", ActionUrl = Url.Action("Bookings") })' />
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable)
+{
+    <section aria-labelledby="summary-heading">
+        <h2 id="summary-heading">Booking overview</h2>
+        <div class="metric-grid">
+        @foreach (var status in new[] { "Requested", "Confirmed", "Completed", "Cancelled" })
+        {
+            <a class="metric-card" asp-action="Bookings" asp-route-status="@status"><span>@status</span><strong>@(Model.StatusCounts.TryGetValue(status, out var count) ? count.ToString() : "Not supplied")</strong><span>View bookings</span></a>
+        }
+        </div>
+    </section>
+    <section class="content-section">
+        <h2>Waiting for approval</h2>
+        @if (Model.WaitingForApproval.Count == 0) { <partial name="_EmptyState" model='@(new EmptyStateViewModel { Title = "No requests awaiting review", Message = "New requests will appear here when the service returns them." })' /> }
+        <div class="booking-grid">@foreach (var booking in Model.WaitingForApproval) { <partial name="_BookingCard" model="booking" /> }</div>
+    </section>
+    <section class="content-section">
+        <h2>Today's bookings</h2>
+        @if (Model.Today.Count == 0) { <p class="text-muted-ui">No bookings are scheduled for today.</p> }
+        <div class="booking-grid">@foreach (var booking in Model.Today) { <partial name="_BookingCard" model="booking" /> }</div>
+    </section>
+    <section class="content-section">
+        <h2>Next 7 days</h2>
+        @if (Model.NextSevenDays.Count == 0) { <p class="text-muted-ui">No bookings are scheduled in this period.</p> }
+        <div class="booking-grid">@foreach (var booking in Model.NextSevenDays) { <partial name="_BookingCard" model="booking" /> }</div>
+    </section>
+}
+@{
+    var links = new[] { (Controller: "AdminServices", Label: "Services"), (Controller: "AdminTimeSlots", Label: "Time slots"), (Controller: "AdminUsers", Label: "Users") };
+    var availableLinks = links.Where(link => Actions.ActionDescriptors.Items.OfType<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>().Any(action => action.ControllerName == link.Controller && action.ActionName == "Index")).ToArray();
+}
+@if (availableLinks.Length > 0)
+{
+    <nav class="component-actions" aria-label="Other administration areas">
+        @foreach (var link in availableLinks) { <a class="button-secondary" asp-controller="@link.Controller" asp-action="Index">@link.Label</a> }
+    </nav>
+}

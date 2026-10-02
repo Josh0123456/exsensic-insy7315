@@ -1,0 +1,17 @@
+@model Exsensic.Web.Models.Services.ServiceDetailViewModel
+@{ ViewData["Title"] = Model.Service?.Name ?? "Service details"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = Model.Service?.Name ?? "Service details", Eyebrow = Model.Service?.Category ?? "Creative services" })' />
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable && Model.Service is not null)
+{
+    <section class="service-detail-panel" aria-labelledby="service-overview">
+        <h2 id="service-overview">Made for your business</h2>
+        <p class="service-description">@Model.Service.Description</p>
+        <dl class="card-facts">
+            <div><dt>Duration</dt><dd>@Model.Service.DurationMinutes minutes</dd></div>
+            @if (Model.Service.StartingPrice is decimal price) { <div><dt>Starting price</dt><dd>R @price.ToString("N2")</dd></div> }
+        </dl>
+        <div class="component-actions"><a class="button-primary" asp-controller="Book" asp-action="Index" asp-route-serviceId="@Model.Service.ServiceId">Book this service</a></div>
+    </section>
+}
+<a class="text-link" asp-action="Index">Back to services</a>

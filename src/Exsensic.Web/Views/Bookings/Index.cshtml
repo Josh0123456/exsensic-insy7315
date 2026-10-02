@@ -1,0 +1,23 @@
+@model Exsensic.Web.Models.Bookings.BookingListViewModel
+@{ ViewData["Title"] = "My bookings"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Your projects, in motion.", Eyebrow = "My bookings", Subtitle = "Follow your requests from the first idea to the finished work.", ActionText = "Book a service", ActionUrl = Url.Action("Index", "Services") })' />
+<nav class="filter-chips" aria-label="Booking filters">
+@foreach (var filter in new[] { "Upcoming", "Requested", "Confirmed", "Past", "Cancelled" })
+{
+    <a asp-action="Index" asp-route-filter="@filter" aria-current="@(Model.Filter == filter ? "page" : null)">@filter</a>
+}
+</nav>
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable)
+{
+    <h2 class="section-title">@Model.Filter bookings</h2>
+    @if (Model.Bookings.Count == 0)
+    {
+        <partial name="_EmptyState" model='@(new EmptyStateViewModel { Title = "No bookings in this view", Message = "When you request a service, you can follow its progress here.", ActionText = "Book a service", ActionUrl = Url.Action("Index", "Services") })' />
+    }
+    else
+    {
+        <div class="booking-grid">@foreach (var booking in Model.Bookings) { <partial name="_BookingCard" model="booking" /> }</div>
+        @if (Model.Pager is not null) { <partial name="_Pager" model="Model.Pager" /> }
+    }
+}

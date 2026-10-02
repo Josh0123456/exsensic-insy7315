@@ -1,0 +1,35 @@
+@model Exsensic.Web.Models.Account.ProfileViewModel
+@{ ViewData["Title"] = "Your profile"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Your details, up to date.", Eyebrow = "Your account", Subtitle = "Keep the contact details used for your bookings current." })' />
+<div class="form-panel form-panel-wide">
+    <partial name="_JourneyFeedback" model="Model" />
+    <form asp-action="Profile" method="post" data-single-submit>
+        <fieldset disabled="@(!Model.IntegrationAvailable)">
+            <legend>Contact details</legend>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label asp-for="FullName">Full name (required)</label>
+                    <input asp-for="FullName" type="text" autocomplete="name" aria-describedby="FullName-error" />
+                    <span asp-validation-for="FullName" id="FullName-error" class="field-error"></span>
+</div>
+                @if (Model.ShowCompany) { <div class="form-field">
+                    <label asp-for="CompanyName">Company name</label>
+                    <input asp-for="CompanyName" type="text" autocomplete="organization" aria-describedby="CompanyName-error" />
+                    <span asp-validation-for="CompanyName" id="CompanyName-error" class="field-error"></span>
+</div> }
+                <div class="form-field">
+                    <label asp-for="Email">Email address (required)</label>
+                    <input asp-for="Email" type="email" autocomplete="email" aria-describedby="Email-error" />
+                    <span asp-validation-for="Email" id="Email-error" class="field-error"></span>
+</div>
+                <div class="form-field">
+                    <label asp-for="Phone">Phone number</label>
+                    <input asp-for="Phone" type="tel" autocomplete="tel" aria-describedby="Phone-error" />
+                    <span asp-validation-for="Phone" id="Phone-error" class="field-error"></span>
+</div>
+            </div>
+            <button class="button-primary" type="submit">Save profile</button>
+        </fieldset>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
