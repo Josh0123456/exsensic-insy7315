@@ -9,7 +9,7 @@ namespace Exsensic.Core.Exceptions;
 /// a booking that is already Completed. The API turns it into 409 with the code invalid_transition
 /// (docs/CONTRACTS.md §3 and §7).
 /// </summary>
-public sealed class InvalidBookingTransitionException : Exception
+public sealed class InvalidBookingTransitionException : BusinessRuleException
 {
     /// <summary>
     /// Creates the exception for an action that the current status does not allow.
@@ -18,14 +18,11 @@ public sealed class InvalidBookingTransitionException : Exception
     /// <param name="action">The action that was attempted.</param>
     /// <param name="detail">An optional extra explanation, for example why Complete was refused.</param>
     public InvalidBookingTransitionException(BookingStatus currentStatus, BookingAction action, string? detail = null)
-        : base(BuildMessage(currentStatus, action, detail))
+        : base(ErrorCodes.InvalidTransition, BuildMessage(currentStatus, action, detail))
     {
         CurrentStatus = currentStatus;
         Action = action;
     }
-
-    /// <summary>The ProblemDetails code the API sends for this error.</summary>
-    public string Code => ErrorCodes.InvalidTransition;
 
     /// <summary>The status the booking was in when the action was attempted.</summary>
     public BookingStatus CurrentStatus { get; }
