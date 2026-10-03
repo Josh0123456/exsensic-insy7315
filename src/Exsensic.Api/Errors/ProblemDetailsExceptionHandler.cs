@@ -2,6 +2,7 @@ using Exsensic.Contracts.Common;
 using Exsensic.Core.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Exsensic.Api.Errors;
 
@@ -23,6 +24,9 @@ public sealed class ProblemDetailsExceptionHandler : IExceptionHandler
 
     /// <summary>The message sent for 500. The real error is in the logs, linked by the traceId.</summary>
     public const string ServerErrorMessage = "Something went wrong on our side. Please try again later.";
+
+    /// <summary>The message sent when a record was changed by someone else since the client loaded it.</summary>
+    public const string ConcurrencyMessage = "This record was changed by someone else. Please reload it and try again.";
 
     private readonly IProblemDetailsService _problemDetailsService;
     private readonly ILogger<ProblemDetailsExceptionHandler> _logger;
@@ -55,17 +59,18 @@ public sealed class ProblemDetailsExceptionHandler : IExceptionHandler
         }
         else
         {
-            // Expected outcomes (409, 404) are not faults, so they are logged without the stack trace.
+            // Expected outcomes (400, 404, 409) are not faults, so they are logged without the stack trace.
             _logger.LogInformation("Request on {Method} {Path} ended with {Status} {Code}", httpContext.Request.Method, httpContext.Request.Path, status, code);
         }
 
         httpContext.Response.StatusCode = status;
 
-        var problemDetails = new ProblemDetails
-        {
-            Status = status,
-            Title = title,
-        };
+        // Validation failures carry per-field errors, in the same shape as automatic model validation.
+        ProblemDetails problemDetails = exception is RequestValidationException validation
+            ? new HttpValidationProblemDetails(validation.Errors.ToDictionary(e => e.Key, e => e.Value))
+            : new ProblemDetails();
+        problemDetails.Status = status;
+        problemDetails.Title = title;
         problemDetails.Extensions[ErrorHandlingExtensions.CodeKey] = code;
 
         return await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
@@ -83,9 +88,14 @@ public sealed class ProblemDetailsExceptionHandler : IExceptionHandler
     {
         NotFoundException => (StatusCodes.Status404NotFound, ErrorCodes.NotFound, NotFoundMessage),
 
+        RequestValidationException validation => (StatusCodes.Status400BadRequest, ErrorCodes.ValidationFailed, validation.Message),
+
         // Covers InvalidBookingTransition, SlotUnavailable, StaffUnavailable and ConcurrencyConflict,
         // which all inherit from BusinessRuleException and carry their own code.
         BusinessRuleException rule => (StatusCodes.Status409Conflict, rule.Code, rule.Message),
+
+        // EF Core throws this when the RowVersion sent by the client no longer matches the database.
+        DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, ErrorCodes.ConcurrencyConflict, ConcurrencyMessage),
 
         _ => (StatusCodes.Status500InternalServerError, ErrorCodes.ServerError, ServerErrorMessage),
     };
