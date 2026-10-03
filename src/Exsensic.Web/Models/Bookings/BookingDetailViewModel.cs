@@ -13,7 +13,7 @@ public sealed class BookingDetailViewModel : JourneyPage
 
     /// <summary>ServiceId for the Web presentation.</summary>
     [BindNever]
-    public Guid ServiceId { get; set; }
+    public int ServiceId { get; set; }
 
     /// <summary>TimeSlotId for the Web presentation.</summary>
     [BindNever]

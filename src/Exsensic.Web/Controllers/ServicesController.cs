@@ -17,8 +17,8 @@ public sealed class ServicesController(ICatalogJourney? journey = null) : Journe
             new ServiceListViewModel { Category = category }, cancellationToken);
 
     /// <summary>Shows one API-backed service; never fabricates display values from an ID.</summary>
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken) =>
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> Details(int id, CancellationToken cancellationToken) =>
         journey is null ? Unavailable("Details", new ServiceDetailViewModel())
         : await RenderAsync("Details", await journey.DetailAsync(id, cancellationToken),
             new ServiceDetailViewModel(), cancellationToken);
