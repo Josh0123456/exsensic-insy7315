@@ -1,4 +1,5 @@
 using Exsensic.Core.Bookings.Observers;
+using Exsensic.Core.Requirements;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Exsensic.Core.Bookings;
@@ -19,6 +20,7 @@ public static class BookingServiceExtensions
         services.AddScoped<IBookingObserver, StatusHistoryObserver>();
         services.AddScoped<IBookingObserver, NotificationObserver>();
         services.AddScoped<BookingEventDispatcher>();
+        services.AddScoped<RequirementTemplateService>();
 
         return services;
     }
