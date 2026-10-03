@@ -23,6 +23,7 @@ public static class BookingServiceExtensions
         services.AddScoped<RequirementTemplateService>();
         services.AddScoped<BookingService>();
         services.AddScoped<BookingQueryService>();
+        services.AddScoped<AdminBookingService>();
 
         return services;
     }

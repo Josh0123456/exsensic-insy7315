@@ -21,4 +21,5 @@ public interface IUserDirectory
 /// <param name="UserId">The user's id.</param>
 /// <param name="FullName">The user's full name.</param>
 /// <param name="Email">The user's email address.</param>
-public sealed record UserContact(Guid UserId, string FullName, string Email);
+/// <param name="IsActive">False when an admin has deactivated the account, so they can't be assigned new work.</param>
+public sealed record UserContact(Guid UserId, string FullName, string Email, bool IsActive);
