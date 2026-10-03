@@ -1,3 +1,4 @@
+using Exsensic.Contracts.Admin;
 using Exsensic.Contracts.Bookings;
 using Exsensic.Contracts.Common;
 using Exsensic.Contracts.Enums;
@@ -157,6 +158,45 @@ public sealed class BookingQueryService
             booking.CreatedAtUtc,
             booking.UpdatedAtUtc,
             Convert.ToBase64String(booking.RowVersion));
+    }
+
+    /// <summary>
+    /// The staff members an admin can assign to a booking for this service and slot
+    /// (GET /admin/staff?serviceId=&amp;timeSlotId=): qualified for the service, with an active account, and
+    /// with no other Requested or Confirmed booking overlapping the slot. Sorted by name.
+    /// </summary>
+    /// <param name="serviceId">The booked service.</param>
+    /// <param name="timeSlotId">The booked slot.</param>
+    /// <param name="ct">Cancelled if the request is aborted.</param>
+    /// <exception cref="NotFoundException">The service or the slot doesn't exist.</exception>
+    public async Task<IReadOnlyList<StaffOptionDto>> ListStaffOptionsAsync(int serviceId, int timeSlotId, CancellationToken ct)
+    {
+        if (!await _db.Services.AsNoTracking().AnyAsync(s => s.Id == serviceId, ct))
+        {
+            throw new NotFoundException("Service");
+        }
+
+        var slot = await _db.TimeSlots.AsNoTracking().FirstOrDefaultAsync(t => t.Id == timeSlotId, ct)
+            ?? throw new NotFoundException("Time slot");
+
+        var qualified = await StaffAvailability.QualifiedStaffAsync(_db, serviceId, ct);
+        var busy = await StaffAvailability.BusyStaffAsync(_db, slot, exceptBookingId: null, ct);
+        var candidates = qualified.Where(id => !busy.Contains(id)).ToList();
+        if (candidates.Count == 0)
+        {
+            return [];
+        }
+
+        var jobTitles = await _db.StaffProfiles.AsNoTracking()
+            .Where(p => candidates.Contains(p.UserId))
+            .ToDictionaryAsync(p => p.UserId, p => p.JobTitle, ct);
+        var users = await _users.GetContactsAsync(candidates, ct);
+
+        return candidates
+            .Where(id => users.TryGetValue(id, out var user) && user.IsActive)
+            .Select(id => new StaffOptionDto(id, users[id].FullName, jobTitles.GetValueOrDefault(id) ?? string.Empty))
+            .OrderBy(s => s.FullName, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
     }
 
     /// <summary>

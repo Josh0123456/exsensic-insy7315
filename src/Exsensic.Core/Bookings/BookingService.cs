@@ -1,4 +1,5 @@
 using Exsensic.Contracts.Bookings;
+using Exsensic.Contracts.Common;
 using Exsensic.Contracts.Enums;
 using Exsensic.Core.Abstractions;
 using Exsensic.Core.Bookings.Observers;
@@ -7,35 +8,37 @@ using Exsensic.Core.Exceptions;
 using Exsensic.Core.Requirements;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Exsensic.Core.Bookings;
 
 /// <summary>
-/// The booking use cases the API calls. Controllers stay thin: they pass the request and the signed-in
-/// user's id, and this class applies the business rules (docs/CONTRACTS.md §10).
+/// The client-side booking use cases the API calls: create, reschedule and cancel. Controllers stay thin:
+/// they check access, pass the request and the signed-in user's id, and this class applies the business
+/// rules (docs/CONTRACTS.md §10). Admin approval lives in AdminBookingService.
 /// </summary>
 public sealed class BookingService
 {
-    /// <summary>
-    /// The filtered unique index that allows only one Requested or Confirmed booking per slot
-    /// (docs/CONTRACTS.md §4). It is the real double-booking guard: the checks in code give a friendly
-    /// message, but only the database can stop two requests that arrive at the same moment.
-    /// </summary>
-    public const string ActiveSlotIndex = "UX_Bookings_ActiveSlot";
-
     private readonly IAppDbContext _db;
     private readonly BookingEventDispatcher _dispatcher;
     private readonly TimeProvider _timeProvider;
+    private readonly BookingPolicyOptions _policy;
     private readonly ILogger<BookingService> _logger;
 
     /// <summary>
-    /// Creates the service with the database, the observer dispatcher, the clock and a logger.
+    /// Creates the service with the database, the observer dispatcher, the clock, the booking policy and a logger.
     /// </summary>
-    public BookingService(IAppDbContext db, BookingEventDispatcher dispatcher, TimeProvider timeProvider, ILogger<BookingService> logger)
+    public BookingService(
+        IAppDbContext db,
+        BookingEventDispatcher dispatcher,
+        TimeProvider timeProvider,
+        IOptions<BookingPolicyOptions> policy,
+        ILogger<BookingService> logger)
     {
         _db = db;
         _dispatcher = dispatcher;
         _timeProvider = timeProvider;
+        _policy = policy.Value;
         _logger = logger;
     }
 
@@ -86,15 +89,8 @@ public sealed class BookingService
                 var slot = await _db.TimeSlots.FirstOrDefaultAsync(t => t.Id == request.TimeSlotId, token)
                     ?? throw new SlotUnavailableException();
 
-                EnsureSlotCanBeBooked(slot, service, nowUtc);
-
-                var taken = await _db.Bookings.AnyAsync(
-                    b => b.TimeSlotId == slot.Id && (b.Status == BookingStatus.Requested || b.Status == BookingStatus.Confirmed),
-                    token);
-                if (taken)
-                {
-                    throw new SlotUnavailableException("Someone has just booked that time. Please choose another time.");
-                }
+                BookingRules.EnsureSlotCanBeBooked(slot, service, nowUtc);
+                await BookingRules.EnsureSlotIsFreeAsync(_db, slot.Id, exceptBookingId: null, token);
 
                 var booking = Booking.Create(clientUserId, service, slot, BookingReferenceGenerator.Next(), nowUtc);
                 foreach (var (key, value) in request.Requirements.Where(a => !string.IsNullOrWhiteSpace(a.Value)))
@@ -117,7 +113,7 @@ public sealed class BookingService
 
             return new BookingCreatedDto(created.Id, created.Reference, created.Status);
         }
-        catch (DbUpdateException ex) when (IsUniqueIndexViolation(ex, ActiveSlotIndex))
+        catch (DbUpdateException ex) when (BookingRules.IsUniqueIndexViolation(ex, BookingRules.ActiveSlotIndex))
         {
             _logger.LogInformation("Slot {TimeSlotId} was taken by a concurrent booking", request.TimeSlotId);
             throw new SlotUnavailableException("Someone has just booked that time. Please choose another time.");
@@ -125,42 +121,83 @@ public sealed class BookingService
     }
 
     /// <summary>
-    /// The slot rules from docs/CONTRACTS.md §4: not blocked, starting in the future, and at least as long
-    /// as the service. The "no active booking" rule is checked separately against the database.
+    /// Moves a booking to another slot (PUT /api/v1/bookings/{id}/reschedule). The State pattern decides
+    /// what happens to the status: Requested stays Requested, Confirmed goes back to Requested for
+    /// re-approval, and final bookings can't be moved. The old slot is freed automatically, because only
+    /// Requested and Confirmed bookings hold a slot.
     /// </summary>
-    private static void EnsureSlotCanBeBooked(TimeSlot slot, Service service, DateTimeOffset nowUtc)
+    /// <param name="bookingId">The booking to move. The caller's access has already been checked.</param>
+    /// <param name="request">The new slot and the RowVersion the client last saw.</param>
+    /// <param name="userId">The client or admin making the change.</param>
+    /// <param name="ct">Cancelled if the request is aborted.</param>
+    /// <exception cref="InvalidBookingTransitionException">The booking is Completed or Cancelled.</exception>
+    /// <exception cref="SlotUnavailableException">The new slot is missing, the same, blocked, started, too short or taken.</exception>
+    /// <exception cref="ConcurrencyConflictException">The booking changed since the client loaded it.</exception>
+    public async Task RescheduleAsync(int bookingId, RescheduleBookingRequest request, Guid userId, CancellationToken ct)
     {
-        if (slot.IsBlocked)
+        ArgumentNullException.ThrowIfNull(request);
+        var expectedVersion = BookingRules.DecodeRowVersion(request.RowVersion);
+        var nowUtc = _timeProvider.GetUtcNow();
+
+        try
         {
-            throw new SlotUnavailableException("That time slot isn't available. Please choose another time.");
+            await BookingRules.ChangeAsync(_db, _dispatcher, bookingId, expectedVersion, async (booking, token) =>
+            {
+                var slot = await _db.TimeSlots.FirstOrDefaultAsync(t => t.Id == request.NewTimeSlotId, token)
+                    ?? throw new SlotUnavailableException();
+                if (slot.Id == booking.TimeSlotId)
+                {
+                    throw new SlotUnavailableException("The booking is already at that time. Please choose a different time.");
+                }
+
+                // The state is asked first, so moving a final booking reports invalid_transition.
+                booking.Reschedule(slot, userId, nowUtc);
+                BookingRules.EnsureSlotCanBeBooked(slot, booking.Service, nowUtc);
+                await BookingRules.EnsureSlotIsFreeAsync(_db, slot.Id, booking.Id, token);
+            }, ct);
+        }
+        catch (DbUpdateException ex) when (BookingRules.IsUniqueIndexViolation(ex, BookingRules.ActiveSlotIndex))
+        {
+            throw new SlotUnavailableException("Someone has just booked that time. Please choose another time.");
         }
 
-        if (SastTime.ToUtc(slot.SlotDate, slot.StartTime) <= nowUtc)
-        {
-            throw new SlotUnavailableException("That time slot has already started. Please choose a later time.");
-        }
-
-        if ((slot.EndTime - slot.StartTime).TotalMinutes < service.DurationMinutes)
-        {
-            throw new SlotUnavailableException("That time slot is too short for this service. Please choose another time.");
-        }
+        _logger.LogInformation("Booking {BookingId} rescheduled to slot {TimeSlotId}", bookingId, request.NewTimeSlotId);
     }
 
     /// <summary>
-    /// True when the save failed because it would break the named unique index. SQL Server reports this as
-    /// error 2601 or 2627 with the index name in the message; the name is checked so a clash on any other
-    /// index (for example a duplicate reference) is not mistaken for a taken slot.
+    /// Cancels a booking (PUT /api/v1/bookings/{id}/cancel). A client can't cancel a confirmed booking
+    /// within BookingPolicy:ClientCancelCutoffHours of its start, because staff have already prepared for
+    /// it (409 cancel_window_closed); an admin can cancel at any time.
     /// </summary>
-    private static bool IsUniqueIndexViolation(DbUpdateException ex, string indexName)
+    /// <param name="bookingId">The booking to cancel. The caller's access has already been checked.</param>
+    /// <param name="request">An optional reason and the RowVersion the client last saw.</param>
+    /// <param name="userId">The client or admin cancelling.</param>
+    /// <param name="isAdmin">True when the caller is an admin, who isn't bound by the cut-off.</param>
+    /// <param name="ct">Cancelled if the request is aborted.</param>
+    /// <exception cref="BusinessRuleException">A client is inside the cut-off window (cancel_window_closed).</exception>
+    /// <exception cref="InvalidBookingTransitionException">The booking is already Completed or Cancelled.</exception>
+    /// <exception cref="ConcurrencyConflictException">The booking changed since the client loaded it.</exception>
+    public async Task CancelAsync(int bookingId, CancelBookingRequest request, Guid userId, bool isAdmin, CancellationToken ct)
     {
-        for (Exception? inner = ex.InnerException; inner is not null; inner = inner.InnerException)
-        {
-            if (inner.Message.Contains(indexName, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
+        ArgumentNullException.ThrowIfNull(request);
+        var expectedVersion = BookingRules.DecodeRowVersion(request.RowVersion);
+        var nowUtc = _timeProvider.GetUtcNow();
+        var cutoff = TimeSpan.FromHours(_policy.ClientCancelCutoffHours);
 
-        return false;
+        await BookingRules.ChangeAsync(_db, _dispatcher, bookingId, expectedVersion, (booking, _) =>
+        {
+            var startsAtUtc = SastTime.ToUtc(booking.TimeSlot.SlotDate, booking.TimeSlot.StartTime);
+            if (!isAdmin && booking.Status == BookingStatus.Confirmed && startsAtUtc - nowUtc < cutoff)
+            {
+                throw new BusinessRuleException(
+                    ErrorCodes.CancelWindowClosed,
+                    $"Bookings can't be cancelled within {_policy.ClientCancelCutoffHours} hours of the start. Please contact us instead.");
+            }
+
+            booking.Cancel(request.Reason, userId, nowUtc);
+            return Task.CompletedTask;
+        }, ct);
+
+        _logger.LogInformation("Booking {BookingId} cancelled", bookingId);
     }
 }

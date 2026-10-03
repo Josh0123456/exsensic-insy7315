@@ -1,7 +1,10 @@
+using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using Exsensic.Api.Security;
 using Exsensic.Contracts.Auth;
+using Exsensic.Contracts.Bookings;
 using Exsensic.Contracts.Enums;
 using Exsensic.Core.Bookings;
 using Exsensic.Core.Entities;
@@ -31,6 +34,7 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
     private int _nextServiceNumber;
     private int _nextSlotDay;
     private int _nextCompanyNumber;
+    private int _nextSoonMinute;
 
     /// <summary>Picks a uniquely named test database.</summary>
     public BookingApiFactory()
@@ -75,7 +79,7 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
     }
 
     /// <summary>
-    /// Creates a user in the given role (with a client profile for clients) and returns an HTTP client signed in
+    /// Creates a user in the given role (with a client or staff profile) and returns an HTTP client signed in
     /// as them, plus their id.
     /// </summary>
     public async Task<(HttpClient Client, Guid UserId)> CreateSignedInClientAsync(string role = RoleNames.Client)
@@ -99,6 +103,12 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
         {
             var db = scope.ServiceProvider.GetRequiredService<ExsensicDbContext>();
             db.ClientProfiles.Add(new ClientProfile { UserId = user.Id, CompanyName = $"Test Company {Interlocked.Increment(ref _nextCompanyNumber)}", Phone = "0100000000" });
+            await db.SaveChangesAsync();
+        }
+        else if (role == RoleNames.Staff)
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ExsensicDbContext>();
+            db.StaffProfiles.Add(new StaffProfile { UserId = user.Id, JobTitle = "Photographer" });
             await db.SaveChangesAsync();
         }
 
@@ -132,21 +142,88 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
     }
 
     /// <summary>Adds a 09:00–11:00 slot on its own date, at least ten days in the future, and returns its id.</summary>
-    public async Task<int> AddFutureSlotAsync()
+    public Task<int> AddFutureSlotAsync() => AddSlotAsync(NextFutureDate(), new TimeOnly(9, 0));
+
+    /// <summary>A date (SAST) at least ten days ahead that no other test in this run has used.</summary>
+    public DateOnly NextFutureDate() =>
+        TodaySast().AddDays(10 + Interlocked.Increment(ref _nextSlotDay));
+
+    /// <summary>Adds a slot on the given date and start time (SAST) and returns its id.</summary>
+    public async Task<int> AddSlotAsync(DateOnly date, TimeOnly start, int lengthMinutes = 120)
     {
         await using var scope = Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ExsensicDbContext>();
-        var todaySast = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(SastTime.Offset).DateTime);
-        var slot = new TimeSlot
-        {
-            SlotDate = todaySast.AddDays(10 + Interlocked.Increment(ref _nextSlotDay)),
-            StartTime = new TimeOnly(9, 0),
-            EndTime = new TimeOnly(11, 0),
-        };
+        var slot = new TimeSlot { SlotDate = date, StartTime = start, EndTime = start.AddMinutes(lengthMinutes) };
         db.TimeSlots.Add(slot);
         await db.SaveChangesAsync();
         return slot.Id;
     }
+
+    /// <summary>
+    /// Adds a two-hour slot that starts about three hours from now, inside the 24-hour cancellation cut-off.
+    /// Late in the evening it moves to 01:00 the next day, so the slot never runs past midnight.
+    /// </summary>
+    public Task<int> AddSlotStartingSoonAsync()
+    {
+        var soon = DateTimeOffset.UtcNow.ToOffset(SastTime.Offset).AddHours(3);
+        var start = new DateTime(soon.Year, soon.Month, soon.Day, soon.Hour, 0, 0);
+        if (start.Hour >= 22)
+        {
+            start = start.Date.AddDays(1).AddHours(1);
+        }
+
+        // A different minute per call keeps the (date, start time) pair unique.
+        start = start.AddMinutes(Interlocked.Increment(ref _nextSoonMinute) % 60);
+        return AddSlotAsync(DateOnly.FromDateTime(start), TimeOnly.FromDateTime(start));
+    }
+
+    /// <summary>Lets a staff member deliver a service (a StaffServices link).</summary>
+    public async Task LinkStaffToServiceAsync(Guid staffUserId, int serviceId)
+    {
+        await using var scope = Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ExsensicDbContext>();
+        db.StaffServices.Add(new StaffService { StaffUserId = staffUserId, ServiceId = serviceId });
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Deactivates an account, as an admin would.</summary>
+    public async Task DeactivateAsync(Guid userId)
+    {
+        await using var scope = Services.CreateAsyncScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await users.FindByIdAsync(userId.ToString());
+        user!.IsActive = false;
+        Assert.True((await users.UpdateAsync(user)).Succeeded);
+    }
+
+    /// <summary>
+    /// Books a Photoshoot through POST /bookings as the given client, on a new service and slot unless
+    /// they are given, and returns the result.
+    /// </summary>
+    public async Task<BookingCreatedDto> BookAsync(HttpClient client, int? serviceId = null, int? slotId = null)
+    {
+        var request = new CreateBookingRequest(
+            serviceId ?? await AddServiceAsync(),
+            slotId ?? await AddFutureSlotAsync(),
+            new Dictionary<string, string>
+            {
+                ["shootType"] = "Product",
+                ["location"] = "Studio",
+                ["quantity"] = "10",
+                ["description"] = "Shots for the online store.",
+            });
+
+        var response = await client.PostAsJsonAsync("/api/v1/bookings", request);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        return (await response.Content.ReadFromJsonAsync<BookingCreatedDto>())!;
+    }
+
+    /// <summary>Reads a booking's details as the given user.</summary>
+    public static async Task<BookingDetailDto> GetDetailAsync(HttpClient client, int bookingId) =>
+        (await client.GetFromJsonAsync<BookingDetailDto>($"/api/v1/bookings/{bookingId}"))!;
+
+    private static DateOnly TodaySast() =>
+        DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(SastTime.Offset).DateTime);
 
     /// <summary>A fresh database context for checking what the API saved. Dispose the scope after use.</summary>
     public AsyncServiceScope NewScope() => Services.CreateAsyncScope();

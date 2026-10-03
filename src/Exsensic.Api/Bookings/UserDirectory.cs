@@ -21,8 +21,8 @@ public sealed class UserDirectory : IUserDirectory
     }
 
     /// <summary>
-    /// Returns the contact details for the given users in one query. Only the name and email are read,
-    /// never password hashes or security stamps.
+    /// Returns the contact details for the given users in one query. Only the name, email and active flag
+    /// are read, never password hashes or security stamps.
     /// </summary>
     public async Task<IReadOnlyDictionary<Guid, UserContact>> GetContactsAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct)
     {
@@ -33,7 +33,7 @@ public sealed class UserDirectory : IUserDirectory
 
         return await _db.Users.AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
-            .Select(u => new UserContact(u.Id, u.FullName, u.Email ?? string.Empty))
+            .Select(u => new UserContact(u.Id, u.FullName, u.Email ?? string.Empty, u.IsActive))
             .ToDictionaryAsync(u => u.UserId, ct);
     }
 }

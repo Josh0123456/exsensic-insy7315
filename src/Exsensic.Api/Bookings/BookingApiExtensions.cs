@@ -9,13 +9,16 @@ namespace Exsensic.Api.Bookings;
 public static class BookingApiExtensions
 {
     /// <summary>
-    /// Adds Core's booking services and observers, plus the Identity-backed user directory they use for names.
+    /// Adds Core's booking services and observers, the Identity-backed user directory they use for names,
+    /// and the booking policy settings from the "BookingPolicy" configuration section.
     /// </summary>
     /// <param name="services">The API's service collection.</param>
-    public static IServiceCollection AddExsensicBookingApi(this IServiceCollection services)
+    /// <param name="configuration">The API's configuration, for BookingPolicy:ClientCancelCutoffHours.</param>
+    public static IServiceCollection AddExsensicBookingApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddExsensicBookings();
         services.AddScoped<IUserDirectory, UserDirectory>();
+        services.Configure<BookingPolicyOptions>(configuration.GetSection(BookingPolicyOptions.SectionName));
 
         return services;
     }

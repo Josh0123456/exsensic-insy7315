@@ -24,7 +24,7 @@ builder.Services.AddScoped<ServiceCatalogService>();
 builder.Services.AddExsensicErrorHandling();
 
 // Bookings (Daniel): booking services, observers (history and notifications) and the user directory.
-builder.Services.AddExsensicBookingApi();
+builder.Services.AddExsensicBookingApi(builder.Configuration);
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
