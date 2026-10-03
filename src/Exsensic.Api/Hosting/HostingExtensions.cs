@@ -82,7 +82,8 @@ public static class HostingExtensions
 
     /// <summary>
     /// Prepares the database at start-up: applies committed EF Core migrations, ensures the roles
-    /// and the first admin, and adds demo data in Development and Staging (Dean's DatabaseInitialiser,
+    /// and the first admin, and adds demo data in Development and Staging, or wherever
+    /// Database:SeedDemoData is true (production, so the marker has services and accounts) (Dean's DatabaseInitialiser,
     /// docs/CONTRACTS.md §4). Runs when Database:MigrateOnStartup is true (set in Azure) or in
     /// Development. If it fails the API stops, so a broken schema never serves traffic.
     /// </summary>
@@ -101,7 +102,9 @@ public static class HostingExtensions
             return;
         }
 
-        var seedDemoData = app.Environment.IsDevelopment() || app.Environment.IsStaging();
+        // Production is the live demo the marker uses, so it can opt in with Database:SeedDemoData=true.
+        var seedDemoData = app.Configuration.GetValue<bool?>("Database:SeedDemoData")
+            ?? (app.Environment.IsDevelopment() || app.Environment.IsStaging());
         app.Logger.LogInformation("Initialising the database (demo data: {SeedDemoData}).", seedDemoData);
         await DatabaseInitialiser.InitialiseAsync(app.Services, seedDemoData, app.Lifetime.ApplicationStopping);
     }
