@@ -37,7 +37,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<JourneyClock>();
 builder.Services.AddScoped<AccountSession>();
-// Journey adapters remain unregistered until their real shared DTOs and API clients are merged.
+// Journey adapters connect the screens to the API; a screen shows "not available yet" until its adapter is registered.
+builder.Services.AddScoped<IAccountJourney, AccountJourney>();
 
 // Validate once at startup. Development may use loopback HTTP; deployments must use HTTPS.
 var configuredBaseUrl = builder.Configuration["Api:BaseUrl"];
