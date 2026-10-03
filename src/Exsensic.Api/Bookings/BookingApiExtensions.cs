@@ -18,6 +18,7 @@ public static class BookingApiExtensions
     {
         services.AddExsensicBookings();
         services.AddScoped<IUserDirectory, UserDirectory>();
+        services.AddScoped<BookingAccessGuard>();
         services.Configure<BookingPolicyOptions>(configuration.GetSection(BookingPolicyOptions.SectionName));
 
         return services;

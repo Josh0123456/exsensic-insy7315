@@ -1,10 +1,10 @@
+using Exsensic.Api.Bookings;
 using Exsensic.Api.Security;
 using Exsensic.Contracts.Auth;
 using Exsensic.Contracts.Bookings;
 using Exsensic.Contracts.Common;
 using Exsensic.Contracts.Enums;
 using Exsensic.Core.Bookings;
-using Exsensic.Core.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -25,16 +25,16 @@ public sealed class BookingsController : ControllerBase
 
     private readonly BookingService _bookings;
     private readonly BookingQueryService _queries;
-    private readonly IAuthorizationService _authorization;
+    private readonly BookingAccessGuard _access;
 
     /// <summary>
-    /// Creates the controller with the booking services and the authorisation service for BookingAccess.
+    /// Creates the controller with the booking services and the BookingAccess guard.
     /// </summary>
-    public BookingsController(BookingService bookings, BookingQueryService queries, IAuthorizationService authorization)
+    public BookingsController(BookingService bookings, BookingQueryService queries, BookingAccessGuard access)
     {
         _bookings = bookings;
         _queries = queries;
-        _authorization = authorization;
+        _access = access;
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public sealed class BookingsController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<BookingDetailDto> Get(int id, CancellationToken ct)
     {
-        await EnsureCanAccessAsync(id, ct);
+        await _access.EnsureCanAccessAsync(User, id, ct);
         return await _queries.GetDetailAsync(id, ct);
     }
 
@@ -91,7 +91,7 @@ public sealed class BookingsController : ControllerBase
     [Authorize(Roles = ClientOrAdmin)]
     public async Task<BookingDetailDto> Reschedule(int id, RescheduleBookingRequest request, CancellationToken ct)
     {
-        await EnsureCanAccessAsync(id, ct);
+        await _access.EnsureCanAccessAsync(User, id, ct);
         await _bookings.RescheduleAsync(id, request, User.GetUserId(), ct);
         return await _queries.GetDetailAsync(id, ct);
     }
@@ -107,28 +107,8 @@ public sealed class BookingsController : ControllerBase
     [Authorize(Roles = ClientOrAdmin)]
     public async Task<BookingDetailDto> Cancel(int id, CancelBookingRequest request, CancellationToken ct)
     {
-        await EnsureCanAccessAsync(id, ct);
+        await _access.EnsureCanAccessAsync(User, id, ct);
         await _bookings.CancelAsync(id, request, User.GetUserId(), User.IsInRole(RoleNames.Admin), ct);
         return await _queries.GetDetailAsync(id, ct);
-    }
-
-    /// <summary>
-    /// Runs the BookingAccess policy against the booking's client and staff member. A missing booking and a
-    /// refused one both throw <see cref="NotFoundException"/>, so the two cases look identical (never 403).
-    /// </summary>
-    private async Task EnsureCanAccessAsync(int bookingId, CancellationToken ct)
-    {
-        var parties = await _queries.GetPartiesAsync(bookingId, ct);
-        if (parties is null)
-        {
-            throw new NotFoundException("Booking");
-        }
-
-        var resource = new BookingAccessResource(parties.ClientUserId, parties.StaffUserId);
-        var result = await _authorization.AuthorizeAsync(User, resource, AuthorizationPolicies.BookingAccess);
-        if (!result.Succeeded)
-        {
-            throw new NotFoundException("Booking");
-        }
     }
 }
