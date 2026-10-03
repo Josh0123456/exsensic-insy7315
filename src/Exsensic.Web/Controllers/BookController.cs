@@ -8,12 +8,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace Exsensic.Web.Controllers;
 
 /// <summary>Two-step Client wizard; availability and creation remain authoritative API operations.</summary>
-[Authorize(Roles = "Client"), Route("Book/{serviceId:guid}")]
+[Authorize(Roles = "Client"), Route("Book/{serviceId:int}")]
 public sealed class BookController(JourneyClock clock, IBookingWizardJourney? journey = null) : JourneyController
 {
     /// <summary>Displays a bounded 14-day availability window.</summary>
     [HttpGet("")]
-    public async Task<IActionResult> Index(Guid serviceId, DateOnly? from, CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(int serviceId, DateOnly? from, CancellationToken cancellationToken)
     {
         var start = clock.WindowStart(from);
         var model = new SlotStepViewModel { ServiceId = serviceId, From = start };
@@ -23,7 +23,7 @@ public sealed class BookController(JourneyClock clock, IBookingWizardJourney? jo
 
     /// <summary>Retains only the selected identifier, reloading trusted summary data for the next step.</summary>
     [HttpPost("")]
-    public async Task<IActionResult> Index(Guid serviceId, SlotStepViewModel model, CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(int serviceId, SlotStepViewModel model, CancellationToken cancellationToken)
     {
         model.ServiceId = serviceId;
         model.From = clock.WindowStart(model.From);
@@ -39,7 +39,7 @@ public sealed class BookController(JourneyClock clock, IBookingWizardJourney? jo
 
     /// <summary>Loads the selected time, profile and template from real providers.</summary>
     [HttpGet("Details")]
-    public async Task<IActionResult> Details(Guid serviceId, string? timeSlotId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Details(int serviceId, string? timeSlotId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(timeSlotId)) return RedirectToAction(nameof(Index), new { serviceId });
         var model = new RequirementsStepViewModel { ServiceId = serviceId, TimeSlotId = timeSlotId };
@@ -49,7 +49,7 @@ public sealed class BookController(JourneyClock clock, IBookingWizardJourney? jo
 
     /// <summary>Reloads template metadata and submits to the API; never creates local booking state.</summary>
     [HttpPost("Details")]
-    public async Task<IActionResult> Details(Guid serviceId, RequirementsStepViewModel model, CancellationToken cancellationToken)
+    public async Task<IActionResult> Details(int serviceId, RequirementsStepViewModel model, CancellationToken cancellationToken)
     {
         model.ServiceId = serviceId;
         if (journey is null)
