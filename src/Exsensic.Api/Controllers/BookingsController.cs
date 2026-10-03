@@ -1,4 +1,5 @@
 using Exsensic.Api.Security;
+using Exsensic.Contracts.Auth;
 using Exsensic.Contracts.Bookings;
 using Exsensic.Contracts.Common;
 using Exsensic.Contracts.Enums;
@@ -19,6 +20,9 @@ namespace Exsensic.Api.Controllers;
 [Route("api/v1/bookings")]
 public sealed class BookingsController : ControllerBase
 {
+    /// <summary>Clients and admins may change a booking; assigned staff may only view it.</summary>
+    private const string ClientOrAdmin = RoleNames.Client + "," + RoleNames.Admin;
+
     private readonly BookingService _bookings;
     private readonly BookingQueryService _queries;
     private readonly IAuthorizationService _authorization;
@@ -72,6 +76,39 @@ public sealed class BookingsController : ControllerBase
     public async Task<BookingDetailDto> Get(int id, CancellationToken ct)
     {
         await EnsureCanAccessAsync(id, ct);
+        return await _queries.GetDetailAsync(id, ct);
+    }
+
+    /// <summary>
+    /// Moves a booking to another slot. For the owning client or an admin; assigned staff get 403
+    /// (wrong role) and anyone else 404. A confirmed booking goes back to Requested for re-approval.
+    /// Returns the updated booking.
+    /// </summary>
+    /// <param name="id">The booking id.</param>
+    /// <param name="request">The new slot and the RowVersion from the last read.</param>
+    /// <param name="ct">Cancelled if the request is aborted.</param>
+    [HttpPut("{id:int}/reschedule")]
+    [Authorize(Roles = ClientOrAdmin)]
+    public async Task<BookingDetailDto> Reschedule(int id, RescheduleBookingRequest request, CancellationToken ct)
+    {
+        await EnsureCanAccessAsync(id, ct);
+        await _bookings.RescheduleAsync(id, request, User.GetUserId(), ct);
+        return await _queries.GetDetailAsync(id, ct);
+    }
+
+    /// <summary>
+    /// Cancels a booking. For the owning client or an admin. Clients can't cancel a confirmed booking
+    /// inside the cut-off window (409 cancel_window_closed); admins can at any time. Returns the updated booking.
+    /// </summary>
+    /// <param name="id">The booking id.</param>
+    /// <param name="request">An optional reason and the RowVersion from the last read.</param>
+    /// <param name="ct">Cancelled if the request is aborted.</param>
+    [HttpPut("{id:int}/cancel")]
+    [Authorize(Roles = ClientOrAdmin)]
+    public async Task<BookingDetailDto> Cancel(int id, CancelBookingRequest request, CancellationToken ct)
+    {
+        await EnsureCanAccessAsync(id, ct);
+        await _bookings.CancelAsync(id, request, User.GetUserId(), User.IsInRole(RoleNames.Admin), ct);
         return await _queries.GetDetailAsync(id, ct);
     }
 
