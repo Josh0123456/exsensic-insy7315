@@ -12,9 +12,11 @@ using Exsensic.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Exsensic.IntegrationTests.Bookings;
 
@@ -59,7 +61,18 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
         builder.UseSetting("Jwt:Audience", "exsensic-tests");
         builder.UseSetting("Jwt:LifetimeMinutes", "60");
         builder.UseSetting("Jwt:SigningKey", Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)));
+
+        // Every "now" in the API comes from this clock, so a test can move time forward (for example past a
+        // slot's start) instead of waiting for it.
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<TimeProvider>();
+            services.AddSingleton<TimeProvider>(Clock);
+        });
     }
+
+    /// <summary>The API's clock. It follows the real time until a test moves it forward.</summary>
+    public TestClock Clock { get; } = new();
 
     /// <summary>Starts the API, which migrates the test database.</summary>
     public Task InitializeAsync()
@@ -113,11 +126,21 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
             await db.SaveChangesAsync();
         }
 
-        var token = scope.ServiceProvider.GetRequiredService<TokenService>().CreateFor(user, role);
+        return (await SignInAsAsync(user.Id, role), user.Id);
+    }
+
+    /// <summary>
+    /// A new HTTP client signed in as an existing user, with a token issued at the API clock's current time.
+    /// Used after moving the clock forward, so the token is valid at the new time.
+    /// </summary>
+    public async Task<HttpClient> SignInAsAsync(Guid userId, string role)
+    {
+        await using var scope = Services.CreateAsyncScope();
+        var user = await scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>().FindByIdAsync(userId.ToString());
+        var token = scope.ServiceProvider.GetRequiredService<TokenService>().CreateFor(user!, role);
         var client = CreateAnonymousClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
-
-        return (client, user.Id);
+        return client;
     }
 
     /// <summary>An HTTP client with nobody signed in. It uses https, so the API's HTTPS redirection doesn't get in the way.</summary>

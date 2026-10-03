@@ -25,6 +25,7 @@ public static class BookingServiceExtensions
         services.AddScoped<BookingQueryService>();
         services.AddScoped<AdminBookingService>();
         services.AddScoped<StaffBookingService>();
+        services.AddScoped<NotificationService>();
 
         return services;
     }

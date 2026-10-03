@@ -40,6 +40,8 @@ builder.Services.AddScoped<AccountSession>();
 // Journey adapters connect the screens to the API; a screen shows "not available yet" until its adapter is registered.
 builder.Services.AddScoped<IAccountJourney, AccountJourney>();
 builder.Services.AddScoped<ICatalogJourney, CatalogJourney>();
+// Notifications (Daniel): typed client for the notifications page and the nav badge.
+builder.Services.AddScoped<INotificationsApi, NotificationsApi>();
 
 // Validate once at startup. Development may use loopback HTTP; deployments must use HTTPS.
 var configuredBaseUrl = builder.Configuration["Api:BaseUrl"];
