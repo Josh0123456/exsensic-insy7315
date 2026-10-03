@@ -26,6 +26,25 @@ public class ExsensicDbContext : IdentityDbContext<ApplicationUser, IdentityRole
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default)
         => Database.BeginTransactionAsync(ct);
 
+    /// <summary>
+    /// Runs the work inside EF Core's execution strategy, which is required for our own transactions
+    /// when retry-on-failure is on. A retry starts from a clean change tracker so nothing from the failed
+    /// attempt is saved twice.
+    /// </summary>
+    public Task<T> InTransactionAsync<T>(Func<CancellationToken, Task<T>> work, CancellationToken ct = default)
+    {
+        var attempt = 0;
+        return Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        {
+            if (attempt++ > 0) ChangeTracker.Clear();
+
+            await using var transaction = await Database.BeginTransactionAsync(ct);
+            var result = await work(ct);
+            await transaction.CommitAsync(ct);
+            return result;
+        });
+    }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
