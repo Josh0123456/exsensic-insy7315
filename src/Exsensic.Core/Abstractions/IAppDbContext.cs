@@ -20,5 +20,17 @@ public interface IAppDbContext
     DbSet<Notification> Notifications { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
+    /// <summary>
+    /// Do not use for new code: with retry-on-failure switched on, EF Core rejects transactions started
+    /// this way. Use <see cref="InTransactionAsync{T}"/> instead.
+    /// </summary>
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Runs <paramref name="work"/> in one database transaction and commits it. If the connection drops
+    /// briefly (for example while the free Azure SQL database resumes), the whole block is retried from
+    /// the start, so do all loading and changes inside it. Errors such as a unique-index clash are not
+    /// retried and reach the caller unchanged.
+    /// </summary>
+    Task<T> InTransactionAsync<T>(Func<CancellationToken, Task<T>> work, CancellationToken ct = default);
 }
