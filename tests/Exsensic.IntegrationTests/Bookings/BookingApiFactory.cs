@@ -30,6 +30,7 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
     private readonly string _connectionString;
     private int _nextServiceNumber;
     private int _nextSlotDay;
+    private int _nextCompanyNumber;
 
     /// <summary>Picks a uniquely named test database.</summary>
     public BookingApiFactory()
@@ -74,8 +75,8 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
     }
 
     /// <summary>
-    /// Creates a user in the given role and returns an HTTP client signed in as them, plus their id.
-    /// The client uses https, so the API's HTTPS redirection doesn't get in the way.
+    /// Creates a user in the given role (with a client profile for clients) and returns an HTTP client signed in
+    /// as them, plus their id.
     /// </summary>
     public async Task<(HttpClient Client, Guid UserId)> CreateSignedInClientAsync(string role = RoleNames.Client)
     {
@@ -94,12 +95,23 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
         Assert.True((await users.CreateAsync(user)).Succeeded);
         Assert.True((await users.AddToRoleAsync(user, role)).Succeeded);
 
+        if (role == RoleNames.Client)
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ExsensicDbContext>();
+            db.ClientProfiles.Add(new ClientProfile { UserId = user.Id, CompanyName = $"Test Company {Interlocked.Increment(ref _nextCompanyNumber)}", Phone = "0100000000" });
+            await db.SaveChangesAsync();
+        }
+
         var token = scope.ServiceProvider.GetRequiredService<TokenService>().CreateFor(user, role);
-        var client = CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+        var client = CreateAnonymousClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
 
         return (client, user.Id);
     }
+
+    /// <summary>An HTTP client with nobody signed in. It uses https, so the API's HTTPS redirection doesn't get in the way.</summary>
+    public HttpClient CreateAnonymousClient() =>
+        CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
 
     /// <summary>Adds an active 120-minute Photoshoot service with a unique name and returns its id.</summary>
     public async Task<int> AddServiceAsync()
