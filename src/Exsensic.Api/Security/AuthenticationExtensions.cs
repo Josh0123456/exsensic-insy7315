@@ -66,6 +66,7 @@ public static class AuthenticationExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<TokenService>();
         services.AddScoped<AccountService>();
+        services.AddSingleton<IAuthorizationHandler, BookingAccessHandler>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -93,6 +94,9 @@ public static class AuthenticationExtensions
             .AddPolicy(AuthorizationPolicies.StaffOnly, policy => policy.RequireRole(RoleNames.Staff))
             .AddPolicy(AuthorizationPolicies.AdminOnly, policy => policy.RequireRole(RoleNames.Admin))
             .AddPolicy(AuthorizationPolicies.StaffOrAdmin, policy => policy.RequireRole(RoleNames.Staff, RoleNames.Admin))
+            .AddPolicy(AuthorizationPolicies.BookingAccess, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new BookingAccessRequirement()))
             // Every endpoint needs a signed-in user unless it says [AllowAnonymous] (docs/CONTRACTS.md §2).
             .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 
