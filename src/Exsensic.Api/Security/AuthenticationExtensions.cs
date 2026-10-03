@@ -5,6 +5,7 @@ using Exsensic.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Exsensic.Api.Security;
@@ -61,6 +62,10 @@ public static class AuthenticationExtensions
 
         var jwt = JwtSettings.From(configuration, environment);
         services.AddSingleton(jwt);
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<TokenService>();
+        services.AddScoped<AccountService>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -142,4 +147,13 @@ public sealed record JwtSettings(string Issuer, string Audience, int LifetimeMin
             configuration.GetValue("Jwt:LifetimeMinutes", 60),
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)));
     }
+}
+
+/// <summary>Reads Exsensic claims from the signed-in user.</summary>
+public static class ClaimsPrincipalExtensions
+{
+    /// <summary>The signed-in user's id. Only call on endpoints that require sign-in.</summary>
+    public static Guid GetUserId(this System.Security.Claims.ClaimsPrincipal user) =>
+        Guid.Parse(user.FindFirst(ExsensicClaims.UserId)?.Value
+            ?? throw new InvalidOperationException("The request has no signed-in user."));
 }
