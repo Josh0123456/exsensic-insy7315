@@ -21,6 +21,7 @@ public static class BookingServiceExtensions
         services.AddScoped<IBookingObserver, NotificationObserver>();
         services.AddScoped<BookingEventDispatcher>();
         services.AddScoped<RequirementTemplateService>();
+        services.AddScoped<BookingService>();
 
         return services;
     }
