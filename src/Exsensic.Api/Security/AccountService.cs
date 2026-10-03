@@ -38,12 +38,8 @@ public sealed class AccountService(
             throw new BusinessRuleException(ErrorCodes.Duplicate, "An account with this email already exists.");
         }
 
-        // The retrying SQL connection requires our own transaction to run inside its execution strategy.
-        var strategy = db.Database.CreateExecutionStrategy();
-        return await strategy.ExecuteAsync(async () =>
+        return await db.InTransactionAsync(async ct =>
         {
-            await using var transaction = await db.Database.BeginTransactionAsync(ct);
-
             var user = new ApplicationUser
             {
                 UserName = email,
@@ -56,7 +52,7 @@ public sealed class AccountService(
             var created = await userManager.CreateAsync(user, request.Password);
             if (!created.Succeeded)
             {
-                // The transaction is rolled back when it is disposed without a commit.
+                // Nothing was saved, so the empty transaction commits harmlessly.
                 return AccountResult<AuthResponse>.Invalid(nameof(request.Password), created.Errors.Select(e => e.Description));
             }
 
@@ -68,11 +64,10 @@ public sealed class AccountService(
                 Phone = request.Phone.Trim(),
             });
             await db.SaveChangesAsync(ct);
-            await transaction.CommitAsync(ct);
 
             logger.LogInformation("Client account {UserId} registered.", user.Id);
             return AccountResult<AuthResponse>.Ok(tokens.CreateFor(user, RoleNames.Client));
-        });
+        }, ct);
     }
 
     /// <summary>

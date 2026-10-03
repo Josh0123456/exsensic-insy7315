@@ -7,10 +7,10 @@ namespace Exsensic.Web.Journeys;
 public interface IBookingWizardJourney
 {
     /// <summary>Loads exactly 14 days of real availability and service presentation through P3's client.</summary>
-    Task<ApiResult<SlotStepViewModel>> SlotsAsync(Guid serviceId, DateOnly from, string? selectedSlotId, CancellationToken cancellationToken);
+    Task<ApiResult<SlotStepViewModel>> SlotsAsync(int serviceId, DateOnly from, string? selectedSlotId, CancellationToken cancellationToken);
 
     /// <summary>Reloads trusted slot/service/profile data and real requirement-template metadata.</summary>
-    Task<ApiResult<RequirementsStepViewModel>> RequirementsAsync(Guid serviceId, string timeSlotId, CancellationToken cancellationToken);
+    Task<ApiResult<RequirementsStepViewModel>> RequirementsAsync(int serviceId, string timeSlotId, CancellationToken cancellationToken);
 
     /// <summary>Creates a booking with the real shared DTO and returns only its API-assigned identifier.</summary>
     Task<ApiResult<Guid>> SubmitAsync(RequirementsStepViewModel form, CancellationToken cancellationToken);

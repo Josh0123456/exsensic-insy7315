@@ -9,7 +9,7 @@ namespace Exsensic.Web.Models.Book;
 public sealed class RequirementsStepViewModel : JourneyPage
 {
     /// <summary>ServiceId for the Web presentation.</summary>
-    public Guid ServiceId { get; set; }
+    public int ServiceId { get; set; }
 
     /// <summary>TimeSlotId for the Web presentation.</summary>
     [Required]

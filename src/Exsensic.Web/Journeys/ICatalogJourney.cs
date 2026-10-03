@@ -10,5 +10,5 @@ public interface ICatalogJourney
     Task<ApiResult<ServiceListViewModel>> ListAsync(string? category, CancellationToken cancellationToken);
 
     /// <summary>Loads a real service through P3's catalogue client.</summary>
-    Task<ApiResult<ServiceDetailViewModel>> DetailAsync(Guid id, CancellationToken cancellationToken);
+    Task<ApiResult<ServiceDetailViewModel>> DetailAsync(int id, CancellationToken cancellationToken);
 }

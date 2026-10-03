@@ -39,6 +39,7 @@ builder.Services.AddSingleton<JourneyClock>();
 builder.Services.AddScoped<AccountSession>();
 // Journey adapters connect the screens to the API; a screen shows "not available yet" until its adapter is registered.
 builder.Services.AddScoped<IAccountJourney, AccountJourney>();
+builder.Services.AddScoped<ICatalogJourney, CatalogJourney>();
 
 // Validate once at startup. Development may use loopback HTTP; deployments must use HTTPS.
 var configuredBaseUrl = builder.Configuration["Api:BaseUrl"];
