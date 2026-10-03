@@ -26,6 +26,7 @@ env:
   # Actions → Variables) if the defaults were taken in Azure.
   WEB_APP_NAME: ${{ vars.PRODUCTION_WEB_APP_NAME || 'app-exsensic-web' }}
   API_APP_NAME: ${{ vars.PRODUCTION_API_APP_NAME || 'app-exsensic-api' }}
+  RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP || 'rg-exsensic-insy7315' }}
 
 jobs:
   build:
@@ -127,6 +128,14 @@ jobs:
 
       # The apps restart after a deployment, so allow up to about 5 minutes for them to answer.
       # /health/ready on the API also proves it can reach its database (step 10).
+      # The API only accepts traffic from its web app's outbound IPs (step 14, docs/operations.md).
+      # Let this runner in just long enough to smoke-test the API, then remove the rule.
+      - name: Allow this runner through the API access restriction
+        run: |
+          runner_ip=$(curl --silent --fail https://api.ipify.org)
+          az webapp config access-restriction add --resource-group "$RESOURCE_GROUP" --name "$API_APP_NAME"             --rule-name github-smoke-test --action Allow --ip-address "$runner_ip/32" --priority 50 --output none
+          sleep 20
+
       - name: Smoke test production
         env:
           API_URL: ${{ steps.deploy-api.outputs.webapp-url }}
@@ -149,6 +158,12 @@ jobs:
           check "$API_URL/health/ready"
           check "$WEB_URL/health"
           check "$WEB_URL/"
+
+      - name: Remove the runner from the API access restriction
+        if: always()
+        run: >
+          az webapp config access-restriction remove --resource-group "$RESOURCE_GROUP"
+          --name "$API_APP_NAME" --rule-name github-smoke-test --output none || true
 
       - name: Write deployment summary
         if: always()
