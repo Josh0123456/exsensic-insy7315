@@ -1,3 +1,5 @@
+using Exsensic.Data;
+using Exsensic.Data.Seed;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -42,9 +44,10 @@ public static class HostingExtensions
         // discover the HTTPS port; tell it the public one. (Only used outside Development.)
         services.AddHttpsRedirection(options => options.HttpsPort = 443);
 
-        // Liveness has no checks (the process answers); readiness checks are tagged "ready"
-        // and are added by later steps (the database check in step 10).
-        services.AddHealthChecks();
+        // Liveness has no checks (the process answers). Readiness (tag "ready") also proves the
+        // API can reach its database, so /health/ready turns 503 if Azure SQL is unreachable.
+        services.AddHealthChecks()
+            .AddDbContextCheck<ExsensicDbContext>("database", tags: ["ready"]);
 
         // Do not advertise "Server: Kestrel" to attackers.
         services.Configure<KestrelServerOptions>(options => options.AddServerHeader = false);
@@ -75,5 +78,31 @@ public static class HostingExtensions
             .AllowAnonymous();
 
         return app;
+    }
+
+    /// <summary>
+    /// Prepares the database at start-up: applies committed EF Core migrations, ensures the roles
+    /// and the first admin, and adds demo data in Development and Staging (Dean's DatabaseInitialiser,
+    /// docs/CONTRACTS.md §4). Runs when Database:MigrateOnStartup is true (set in Azure) or in
+    /// Development. If it fails the API stops, so a broken schema never serves traffic.
+    /// </summary>
+    public static async Task InitialiseExsensicDatabaseAsync(this WebApplication app)
+    {
+        var migrateOnStartup = app.Configuration.GetValue<bool>("Database:MigrateOnStartup");
+        if (!migrateOnStartup && !app.Environment.IsDevelopment())
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(app.Configuration.GetConnectionString("Default")))
+        {
+            // Lets a teammate run the API before setting up user-secrets; Azure always has the setting.
+            app.Logger.LogWarning("ConnectionStrings:Default is not set, so the database was not initialised.");
+            return;
+        }
+
+        var seedDemoData = app.Environment.IsDevelopment() || app.Environment.IsStaging();
+        app.Logger.LogInformation("Initialising the database (demo data: {SeedDemoData}).", seedDemoData);
+        await DatabaseInitialiser.InitialiseAsync(app.Services, seedDemoData, app.Lifetime.ApplicationStopping);
     }
 }

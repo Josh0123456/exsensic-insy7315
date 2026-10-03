@@ -23,6 +23,9 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+// Hosting (Josh): apply migrations and seed before the API starts taking requests.
+await app.InitialiseExsensicDatabaseAsync();
+
 // Hosting (Josh): must run first so later middleware sees the real scheme and client IP.
 app.UseExsensicHosting();
 
