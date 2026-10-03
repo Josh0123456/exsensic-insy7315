@@ -33,6 +33,7 @@
                 }
                 @if (User.Identity?.IsAuthenticated == true)
                 {
+                    <vc:notification-badge />
                     <li class="nav-item"><form class="nav-logout" asp-controller="Account" asp-action="Logout" method="post" data-single-submit><button class="nav-link" type="submit">Sign out</button></form></li>
                 }
             </ul>
