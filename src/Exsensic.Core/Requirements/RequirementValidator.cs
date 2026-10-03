@@ -13,6 +13,7 @@ public static class RequirementValidator
 {
     /// <summary>
     /// Validates the answers and returns every problem found, so the client can fix them all at once.
+    /// Messages don't repeat the field label, because the Web shows each one directly beside its field.
     /// </summary>
     /// <param name="category">The category of the service being booked; it decides the template.</param>
     /// <param name="answers">The submitted answers, keyed by field key. Null is treated as no answers.</param>
@@ -56,12 +57,12 @@ public static class RequirementValidator
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return field.Required ? $"{field.Label} is required." : null;
+            return field.Required ? "Please answer this question." : null;
         }
 
         if (field.MaxLength is int maxLength && value.Length > maxLength)
         {
-            return $"{field.Label} must be {maxLength} characters or fewer.";
+            return $"Please keep this to {maxLength} characters or fewer.";
         }
 
         return field.InputType switch
@@ -77,7 +78,7 @@ public static class RequirementValidator
     private static string? CheckSelect(RequirementFieldDto field, string value) =>
         field.Options.Contains(value, StringComparer.Ordinal)
             ? null
-            : $"{field.Label} must be one of: {string.Join(", ", field.Options)}.";
+            : $"Please choose one of: {string.Join(", ", field.Options)}.";
 
     /// <summary>
     /// The answer must be a whole number inside the field's range. Parsed with the invariant culture so
@@ -87,12 +88,12 @@ public static class RequirementValidator
     {
         if (!long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number))
         {
-            return $"{field.Label} must be a whole number.";
+            return "Please enter a whole number.";
         }
 
         if ((field.Min is decimal min && number < min) || (field.Max is decimal max && number > max))
         {
-            return $"{field.Label} must be between {field.Min} and {field.Max}.";
+            return $"Please enter a number from {field.Min} to {field.Max}.";
         }
 
         return null;
@@ -105,5 +106,5 @@ public static class RequirementValidator
     private static string? CheckUrl(RequirementFieldDto field, string value) =>
         Uri.TryCreate(value, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
             ? null
-            : $"{field.Label} must be a web address starting with http:// or https://.";
+            : "Please enter a web address starting with http:// or https://.";
 }

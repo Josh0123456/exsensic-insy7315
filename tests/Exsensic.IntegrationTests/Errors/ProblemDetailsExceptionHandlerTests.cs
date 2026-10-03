@@ -5,6 +5,7 @@ using Exsensic.Core.Bookings;
 using Exsensic.Core.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Exsensic.IntegrationTests.Errors;
@@ -25,6 +26,8 @@ public class ProblemDetailsExceptionHandlerTests
         { new StaffUnavailableException(), 409, "staff_unavailable" },
         { new ConcurrencyConflictException(), 409, "concurrency_conflict" },
         { new BusinessRuleException("cancel_window_closed", "Bookings can't be cancelled within 24 hours of the start."), 409, "cancel_window_closed" },
+        { new DbUpdateConcurrencyException("Stale row version."), 409, "concurrency_conflict" },
+        { new RequestValidationException(new Dictionary<string, string[]> { ["Requirements[quantity]"] = ["Too many."] }), 400, "validation_failed" },
     };
 
     /// <summary>Known exceptions produce their status and code, plus a traceId.</summary>
@@ -49,6 +52,18 @@ public class ProblemDetailsExceptionHandlerTests
         var (_, body) = await HandleAsync(exception);
 
         Assert.Equal(exception.Message, body.GetProperty("title").GetString());
+    }
+
+    /// <summary>A Core validation failure returns the per-field errors, keyed as the Web form names its fields.</summary>
+    [Fact]
+    public async Task TryHandleAsync_RequestValidation_WritesFieldErrors()
+    {
+        var errors = new Dictionary<string, string[]> { ["Requirements[quantity]"] = ["Number of products or people must be between 1 and 500."] };
+
+        var (_, body) = await HandleAsync(new RequestValidationException(errors));
+
+        var messages = body.GetProperty("errors").GetProperty("Requirements[quantity]");
+        Assert.Equal("Number of products or people must be between 1 and 500.", messages[0].GetString());
     }
 
     /// <summary>Not found always uses the generic message, so it never hints at what was looked for.</summary>
