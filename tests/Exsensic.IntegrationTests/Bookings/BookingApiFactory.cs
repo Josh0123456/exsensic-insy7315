@@ -35,6 +35,7 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
     private int _nextSlotDay;
     private int _nextCompanyNumber;
     private int _nextSoonMinute;
+    private int _nextEarlyMinute;
 
     /// <summary>Picks a uniquely named test database.</summary>
     public BookingApiFactory()
@@ -217,6 +218,45 @@ public sealed class BookingApiFactory : WebApplicationFactory<Program>, IAsyncLi
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<BookingCreatedDto>())!;
     }
+
+    /// <summary>
+    /// Saves a booking straight to the database through the domain methods, for situations the API rightly
+    /// refuses to create, such as a booking whose slot has already started. Confirmed when a staff member
+    /// is given. Returns the booking id.
+    /// </summary>
+    public async Task<int> AddBookingInDatabaseAsync(
+        Guid clientUserId, DateOnly date, TimeOnly start, Guid? confirmedStaffId = null, IDictionary<string, string>? requirements = null)
+    {
+        var serviceId = await AddServiceAsync();
+        var slotId = await AddSlotAsync(date, start);
+
+        await using var scope = Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ExsensicDbContext>();
+        var service = await db.Services.SingleAsync(s => s.Id == serviceId);
+        var slot = await db.TimeSlots.SingleAsync(t => t.Id == slotId);
+
+        var booking = Booking.Create(clientUserId, service, slot, BookingReferenceGenerator.Next(), DateTimeOffset.UtcNow);
+        foreach (var (key, value) in requirements ?? new Dictionary<string, string> { ["description"] = "Created directly for a test." })
+        {
+            booking.Requirements.Add(new BookingRequirement { FieldKey = key, FieldValue = value });
+        }
+
+        if (confirmedStaffId is Guid staffId)
+        {
+            booking.Confirm(staffId, Guid.NewGuid(), DateTimeOffset.UtcNow);
+        }
+
+        db.Bookings.Add(booking);
+        await db.SaveChangesAsync();
+        return booking.Id;
+    }
+
+    /// <summary>
+    /// A start time earlier today (SAST) that no other test in this run has used: just after midnight,
+    /// so it has always already started. The minutes keep each (date, start time) pair unique.
+    /// </summary>
+    public (DateOnly Date, TimeOnly Start) EarlierToday() =>
+        (TodaySast(), new TimeOnly(0, 0).AddMinutes(Interlocked.Increment(ref _nextEarlyMinute) % 600));
 
     /// <summary>Reads a booking's details as the given user.</summary>
     public static async Task<BookingDetailDto> GetDetailAsync(HttpClient client, int bookingId) =>
