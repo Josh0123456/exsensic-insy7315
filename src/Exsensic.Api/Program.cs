@@ -11,8 +11,9 @@ builder.Services.AddExsensicHosting(builder.Configuration);
 // Data: the EF Core DbContext on SQL Server (ConnectionStrings:Default).
 builder.Services.AddExsensicData(builder.Configuration);
 
-// Authentication: Identity users and roles with the password and lockout rules.
-builder.Services.AddExsensicAuthentication(builder.Configuration);
+// Authentication: Identity, JWT bearer tokens, role policies and rate limits.
+builder.Services.AddExsensicAuthentication(builder.Configuration, builder.Environment);
+builder.Services.AddExsensicRateLimiting();
 
 // Error handling (Daniel): every error becomes ProblemDetails with "code" and "traceId".
 builder.Services.AddExsensicErrorHandling();
@@ -35,9 +36,11 @@ app.UseExsensicErrorHandling();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().AllowAnonymous();
 }
 
+app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapControllers();
