@@ -1,6 +1,7 @@
 using Exsensic.Api.Errors;
 using Exsensic.Api.Hosting;
 using Exsensic.Api.Security;
+using Exsensic.Core.Catalog;
 using Exsensic.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,9 @@ builder.Services.AddExsensicData(builder.Configuration);
 // Authentication: Identity, JWT bearer tokens, role policies and rate limits.
 builder.Services.AddExsensicAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddExsensicRateLimiting();
+
+// Catalogue: services and slot availability (Core business logic).
+builder.Services.AddScoped<ServiceCatalogService>();
 
 // Error handling (Daniel): every error becomes ProblemDetails with "code" and "traceId".
 builder.Services.AddExsensicErrorHandling();
