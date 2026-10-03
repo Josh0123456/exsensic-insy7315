@@ -31,6 +31,12 @@ public partial class Booking
     [NotMapped]
     public IReadOnlyList<BookingStatusChanged> StatusChanges => _statusChanges;
 
+    /// <summary>
+    /// Empties <see cref="StatusChanges"/> once the observers have handled them, so the same event is
+    /// never written twice. Only the dispatcher in Core calls this.
+    /// </summary>
+    internal void ClearStatusChanges() => _statusChanges.Clear();
+
     /// <summary>The state object for the current status, which decides what is allowed.</summary>
     private BookingState State => BookingState.For(Status);
 

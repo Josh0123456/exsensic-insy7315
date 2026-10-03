@@ -2,6 +2,7 @@ using Exsensic.Api.Errors;
 using Exsensic.Api.Hosting;
 using Exsensic.Api.Security;
 using Exsensic.Data;
+using Exsensic.Core.Bookings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,9 @@ builder.Services.AddExsensicRateLimiting();
 
 // Error handling (Daniel): every error becomes ProblemDetails with "code" and "traceId".
 builder.Services.AddExsensicErrorHandling();
+
+// Bookings (Daniel): status-change observers (history and notifications) and their dispatcher.
+builder.Services.AddExsensicBookings();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
