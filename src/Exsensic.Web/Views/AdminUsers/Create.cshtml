@@ -1,0 +1,63 @@
+@model Exsensic.Web.Models.AdminCatalog.AdminCreateStaffViewModel
+@{
+    ViewData["Title"] = "Add staff";
+}
+
+<partial name="_PageHeader" model='@(new PageHeaderViewModel
+         {
+             Title = "Add staff",
+             Eyebrow = "Admin",
+             Subtitle = "Create a staff account and choose what they can deliver."
+         })' />
+
+<div class="form-panel form-panel-wide">
+    <form method="post" asp-action="Create" data-single-submit>
+        <div asp-validation-summary="All" class="validation-summary" role="alert" tabindex="-1"></div>
+
+        <div class="form-grid">
+            <div class="form-field">
+                <label asp-for="FullName">Full name (required)</label>
+                <input asp-for="FullName" type="text" />
+                <span asp-validation-for="FullName" class="field-error"></span>
+            </div>
+            <div class="form-field">
+                <label asp-for="Email">Email (required)</label>
+                <input asp-for="Email" type="email" />
+                <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-field">
+                <label asp-for="Password">Password (required)</label>
+                <input asp-for="Password" type="password" />
+                <span asp-validation-for="Password" class="field-error"></span>
+            </div>
+            <div class="form-field">
+                <label asp-for="JobTitle">Job title (required)</label>
+                <input asp-for="JobTitle" type="text" />
+                <span asp-validation-for="JobTitle" class="field-error"></span>
+            </div>
+        </div>
+
+        <div class="form-field">
+            <label asp-for="ServiceIds">Services they can deliver</label>
+            <select asp-for="ServiceIds" multiple size="6">
+                @foreach (var service in Model.AvailableServices)
+                {
+                    <option value="@service.Id">@service.Name</option>
+                }
+            </select>
+            <p class="field-hint">Hold Ctrl (Windows) or Cmd (Mac) to pick more than one.</p>
+        </div>
+
+        <div class="component-actions">
+            <button type="submit" class="button-primary">Create staff account</button>
+            <a class="button-secondary" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

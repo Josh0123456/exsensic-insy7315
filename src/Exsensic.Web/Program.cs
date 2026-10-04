@@ -52,6 +52,9 @@ builder.Services.AddScoped<IAdminJourney, AdminJourney>();
 builder.Services.AddScoped<IStaffJourney, StaffJourney>();
 // Notifications (Daniel): typed client for the notifications page and the nav badge.
 builder.Services.AddScoped<INotificationsApi, NotificationsApi>();
+// Admin catalogue and users (Dean): typed clients for the admin management screens.
+builder.Services.AddScoped<IAdminCatalogApi, AdminCatalogApi>();
+builder.Services.AddScoped<IAdminUsersApi, AdminUsersApi>();
 
 // Validate once at startup. Development may use loopback HTTP; deployments must use HTTPS.
 var configuredBaseUrl = builder.Configuration["Api:BaseUrl"];

@@ -81,11 +81,11 @@ calls from the website (see [Hosting](#hosting)).
 
 | Desktop | Mobile (360 px) |
 |---|---|
-| <img src="https://placehold.co/640x400/121511/c4f455?text=Home+and+services" alt="Home page on desktop (placeholder)" width="420" /> | <img src="https://placehold.co/180x380/121511/c4f455?text=Home" alt="Home page on mobile (placeholder)" width="120" /> |
-| <img src="https://placehold.co/640x400/121511/c4f455?text=Booking+wizard" alt="Booking wizard on desktop (placeholder)" width="420" /> | <img src="https://placehold.co/180x380/121511/c4f455?text=Booking" alt="Booking wizard on mobile (placeholder)" width="120" /> |
-| <img src="https://placehold.co/640x400/121511/c4f455?text=Admin+review" alt="Admin review on desktop (placeholder)" width="420" /> | <img src="https://placehold.co/180x380/121511/c4f455?text=Staff" alt="Staff schedule on mobile (placeholder)" width="120" /> |
-
-<!-- Replace the placeholders with real screenshots in docs/assets/screenshots/ before submission. -->
+| <img src="docs/assets/screenshots/home-desktop.png" alt="Home page on desktop" width="420" /> | <img src="docs/assets/screenshots/home-mobile.png" alt="Home page on a phone" width="120" /> |
+| <img src="docs/assets/screenshots/services-desktop.png" alt="Service catalogue on desktop" width="420" /> | <img src="docs/assets/screenshots/services-mobile.png" alt="Service catalogue on a phone" width="120" /> |
+| <img src="docs/assets/screenshots/booking-desktop.png" alt="Booking wizard: choosing a time slot" width="420" /> | <img src="docs/assets/screenshots/booking-mobile.png" alt="Booking wizard on a phone" width="120" /> |
+| <img src="docs/assets/screenshots/admin-review-desktop.png" alt="Admin reviewing a booking request" width="420" /> | <img src="docs/assets/screenshots/staff-mobile.png" alt="Staff schedule on a phone" width="120" /> |
+| <img src="docs/assets/screenshots/my-bookings-desktop.png" alt="Client's My bookings list" width="420" /> | |
 
 ### Features
 

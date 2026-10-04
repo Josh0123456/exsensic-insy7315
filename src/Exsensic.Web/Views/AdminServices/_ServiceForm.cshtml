@@ -1,0 +1,39 @@
+@model Exsensic.Web.Models.AdminCatalog.AdminServiceFormViewModel
+
+<div asp-validation-summary="All" class="validation-summary" role="alert" tabindex="-1"></div>
+
+<div class="form-field">
+    <label asp-for="Name">Name (required)</label>
+    <input asp-for="Name" type="text" aria-describedby="Name-error" />
+    <span asp-validation-for="Name" id="Name-error" class="field-error"></span>
+</div>
+
+<div class="form-field">
+    <label asp-for="Category">Category (required)</label>
+    <select asp-for="Category" aria-describedby="Category-error">
+        @foreach (var category in Model.Categories)
+        {
+            <option value="@category">@category</option>
+        }
+    </select>
+    <span asp-validation-for="Category" id="Category-error" class="field-error"></span>
+</div>
+
+<div class="form-field">
+    <label asp-for="Description">Description (required)</label>
+    <textarea asp-for="Description" rows="5" aria-describedby="Description-error"></textarea>
+    <span asp-validation-for="Description" id="Description-error" class="field-error"></span>
+</div>
+
+<div class="form-grid">
+    <div class="form-field">
+        <label asp-for="DurationMinutes">Duration in minutes (required)</label>
+        <input asp-for="DurationMinutes" type="number" min="15" max="480" aria-describedby="DurationMinutes-error" />
+        <span asp-validation-for="DurationMinutes" id="DurationMinutes-error" class="field-error"></span>
+    </div>
+    <div class="form-field">
+        <label asp-for="BasePrice">Starting price (optional)</label>
+        <input asp-for="BasePrice" type="number" step="0.01" min="0" aria-describedby="BasePrice-error" />
+        <span asp-validation-for="BasePrice" id="BasePrice-error" class="field-error"></span>
+    </div>
+</div>
