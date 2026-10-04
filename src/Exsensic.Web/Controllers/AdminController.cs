@@ -29,8 +29,8 @@ public sealed class AdminController(IAdminJourney? journey = null) : JourneyCont
     }
 
     /// <summary>Loads full review data and only API-supplied qualified/free staff choices.</summary>
-    [HttpGet("Bookings/{id:guid}")]
-    public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken) =>
+    [HttpGet("Bookings/{id:int}")]
+    public async Task<IActionResult> Details(int id, CancellationToken cancellationToken) =>
         journey is null ? Unavailable("Details", new AdminReviewViewModel { Id = id })
         : await RenderAsync("Details", await journey.ReviewAsync(id, cancellationToken), new AdminReviewViewModel { Id = id }, cancellationToken);
 
@@ -40,8 +40,8 @@ public sealed class AdminController(IAdminJourney? journey = null) : JourneyCont
         RedirectToAction(nameof(Bookings), new { status, from, to });
 
     /// <summary>Confirms with the chosen staff member and original RowVersion.</summary>
-    [HttpPost("Bookings/{id:guid}/Confirm")]
-    public async Task<IActionResult> Confirm(Guid id, [Bind(Prefix = "Confirm")] ConfirmBookingViewModel model, CancellationToken cancellationToken)
+    [HttpPost("Bookings/{id:int}/Confirm")]
+    public async Task<IActionResult> Confirm(int id, [Bind(Prefix = "Confirm")] ConfirmBookingViewModel model, CancellationToken cancellationToken)
     {
         if (journey is null) { IntegrationError(); return Unavailable("Details", new AdminReviewViewModel { Id = id, Confirm = model }); }
         ApiClients.ApiProblem? problem = null;
@@ -74,8 +74,8 @@ public sealed class AdminController(IAdminJourney? journey = null) : JourneyCont
     }
 
     /// <summary>Submits a rejection reason; the API owns the Cancelled transition.</summary>
-    [HttpPost("Bookings/{id:guid}/Reject")]
-    public async Task<IActionResult> Reject(Guid id, [Bind(Prefix = "Reject")] RejectBookingViewModel model, CancellationToken cancellationToken)
+    [HttpPost("Bookings/{id:int}/Reject")]
+    public async Task<IActionResult> Reject(int id, [Bind(Prefix = "Reject")] RejectBookingViewModel model, CancellationToken cancellationToken)
     {
         if (journey is null) { IntegrationError(); return Unavailable("Details", new AdminReviewViewModel { Id = id, Reject = model }); }
         ApiClients.ApiProblem? problem = null;

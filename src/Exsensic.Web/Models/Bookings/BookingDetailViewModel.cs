@@ -9,7 +9,7 @@ namespace Exsensic.Web.Models.Bookings;
 public sealed class BookingDetailViewModel : JourneyPage
 {
     /// <summary>Id for the Web presentation.</summary>
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>ServiceId for the Web presentation.</summary>
     [BindNever]
@@ -17,7 +17,7 @@ public sealed class BookingDetailViewModel : JourneyPage
 
     /// <summary>TimeSlotId for the Web presentation.</summary>
     [BindNever]
-    public Guid TimeSlotId { get; set; }
+    public int TimeSlotId { get; set; }
 
     /// <summary>Booking for the Web presentation.</summary>
     [BindNever]

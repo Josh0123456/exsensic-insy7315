@@ -9,7 +9,7 @@ namespace Exsensic.Web.Models.Bookings;
 public sealed class CancelViewModel : JourneyPage
 {
     /// <summary>Id for the Web presentation.</summary>
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>RowVersion for the Web presentation.</summary>
     [Required]

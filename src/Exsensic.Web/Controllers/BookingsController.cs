@@ -23,20 +23,20 @@ public sealed class BookingsController(JourneyClock clock, IBookingJourney? jour
     }
 
     /// <summary>Loads the caller's booking; API 404 never reveals ownership.</summary>
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken) =>
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> Details(int id, CancellationToken cancellationToken) =>
         journey is null ? Unavailable("Details", new BookingDetailViewModel { Id = id })
         : await RenderAsync("Details", await journey.DetailAsync(id, cancellationToken), new BookingDetailViewModel { Id = id }, cancellationToken);
 
     /// <summary>Reloads the real booking before displaying any confirmation information.</summary>
-    [HttpGet("{id:guid}/Confirmation")]
-    public async Task<IActionResult> Confirmation(Guid id, CancellationToken cancellationToken) =>
+    [HttpGet("{id:int}/Confirmation")]
+    public async Task<IActionResult> Confirmation(int id, CancellationToken cancellationToken) =>
         journey is null ? Unavailable("Confirmation", new BookingDetailViewModel { Id = id })
         : await RenderAsync("Confirmation", await journey.DetailAsync(id, cancellationToken), new BookingDetailViewModel { Id = id }, cancellationToken);
 
     /// <summary>Displays real available times for the booking's own service.</summary>
-    [HttpGet("{id:guid}/Reschedule")]
-    public async Task<IActionResult> Reschedule(Guid id, DateOnly? from, CancellationToken cancellationToken)
+    [HttpGet("{id:int}/Reschedule")]
+    public async Task<IActionResult> Reschedule(int id, DateOnly? from, CancellationToken cancellationToken)
     {
         var start = clock.WindowStart(from);
         var model = new RescheduleViewModel { Id = id, From = start };
@@ -45,8 +45,8 @@ public sealed class BookingsController(JourneyClock clock, IBookingJourney? jour
     }
 
     /// <summary>Submits the original concurrency token; conflicts require an explicit reload.</summary>
-    [HttpPost("{id:guid}/Reschedule")]
-    public async Task<IActionResult> Reschedule(Guid id, RescheduleViewModel model, CancellationToken cancellationToken)
+    [HttpPost("{id:int}/Reschedule")]
+    public async Task<IActionResult> Reschedule(int id, RescheduleViewModel model, CancellationToken cancellationToken)
     {
         model.Id = id;
         model.From = clock.WindowStart(model.From);
@@ -78,14 +78,14 @@ public sealed class BookingsController(JourneyClock clock, IBookingJourney? jour
     }
 
     /// <summary>Shows a non-destructive cancellation confirmation page.</summary>
-    [HttpGet("{id:guid}/Cancel")]
-    public async Task<IActionResult> Cancel(Guid id, CancellationToken cancellationToken) =>
+    [HttpGet("{id:int}/Cancel")]
+    public async Task<IActionResult> Cancel(int id, CancellationToken cancellationToken) =>
         journey is null ? Unavailable("Cancel", new CancelViewModel { Id = id })
         : await RenderAsync("Cancel", await journey.CancelPageAsync(id, cancellationToken), new CancelViewModel { Id = id }, cancellationToken);
 
     /// <summary>Asks the API to cancel; never computes the cancellation window locally.</summary>
-    [HttpPost("{id:guid}/Cancel")]
-    public async Task<IActionResult> Cancel(Guid id, CancelViewModel model, CancellationToken cancellationToken)
+    [HttpPost("{id:int}/Cancel")]
+    public async Task<IActionResult> Cancel(int id, CancelViewModel model, CancellationToken cancellationToken)
     {
         model.Id = id;
         if (journey is null) { IntegrationError(); return Unavailable("Cancel", model); }

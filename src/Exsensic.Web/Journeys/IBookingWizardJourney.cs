@@ -13,5 +13,5 @@ public interface IBookingWizardJourney
     Task<ApiResult<RequirementsStepViewModel>> RequirementsAsync(int serviceId, string timeSlotId, CancellationToken cancellationToken);
 
     /// <summary>Creates a booking with the real shared DTO and returns only its API-assigned identifier.</summary>
-    Task<ApiResult<Guid>> SubmitAsync(RequirementsStepViewModel form, CancellationToken cancellationToken);
+    Task<ApiResult<int>> SubmitAsync(RequirementsStepViewModel form, CancellationToken cancellationToken);
 }

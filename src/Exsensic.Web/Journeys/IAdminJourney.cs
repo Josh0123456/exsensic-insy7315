@@ -13,11 +13,11 @@ public interface IAdminJourney
     Task<ApiResult<AdminBookingListViewModel>> ListAsync(string? status, DateOnly? from, DateOnly? to, int page, CancellationToken cancellationToken);
 
     /// <summary>Loads a booking and qualified/free staff from their API endpoints.</summary>
-    Task<ApiResult<AdminReviewViewModel>> ReviewAsync(Guid id, CancellationToken cancellationToken);
+    Task<ApiResult<AdminReviewViewModel>> ReviewAsync(int id, CancellationToken cancellationToken);
 
     /// <summary>Confirms through the API with an explicitly selected staff ID and original concurrency token.</summary>
-    Task<ApiProblem?> ConfirmAsync(Guid id, ConfirmBookingViewModel form, CancellationToken cancellationToken);
+    Task<ApiProblem?> ConfirmAsync(int id, ConfirmBookingViewModel form, CancellationToken cancellationToken);
 
     /// <summary>Rejects through the API with a reason and original concurrency token.</summary>
-    Task<ApiProblem?> RejectAsync(Guid id, RejectBookingViewModel form, CancellationToken cancellationToken);
+    Task<ApiProblem?> RejectAsync(int id, RejectBookingViewModel form, CancellationToken cancellationToken);
 }
