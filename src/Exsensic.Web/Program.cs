@@ -45,6 +45,7 @@ builder.Services.AddScoped<IBookingWizardJourney, BookingWizardJourney>();
 builder.Services.AddScoped<BookingJourney>();
 builder.Services.AddScoped<IBookingJourney>(services => services.GetRequiredService<BookingJourney>());
 builder.Services.AddScoped<IAdminJourney, AdminJourney>();
+builder.Services.AddScoped<IStaffJourney, StaffJourney>();
 // Notifications (Daniel): typed client for the notifications page and the nav badge.
 builder.Services.AddScoped<INotificationsApi, NotificationsApi>();
 
