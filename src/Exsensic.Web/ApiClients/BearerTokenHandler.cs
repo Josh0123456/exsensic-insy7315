@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Exsensic.Contracts.Common;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -23,6 +24,13 @@ public sealed class BearerTokenHandler(IHttpContextAccessor contextAccessor, Api
         // Never use DefaultRequestHeaders or store a token on this pooled handler.
         request.Headers.Authorization = null;
         var context = contextAccessor.HttpContext;
+
+        // Pass the visitor's IP so the API's per-IP rate limits apply per visitor, not to everyone at once.
+        request.Headers.Remove(ExsensicHeaders.ClientIp);
+        if (context?.Connection.RemoteIpAddress is { } visitorIp)
+        {
+            request.Headers.Add(ExsensicHeaders.ClientIp, visitorIp.ToString());
+        }
         if (context?.User.Identity?.IsAuthenticated == true)
         {
             var token = await context.GetTokenAsync(

@@ -85,9 +85,15 @@ public static class DemoBookingSeeder
                     ["description"] = "Ideas for short videos that show our design process." },
             booking => booking.Reject("The requested week is fully booked. Please choose another date.", people.Admin, now), now, ct);
 
-        // Every day: one confirmed photographer booking that has already started, for "staff completes" in the demo.
+        // Every day: one confirmed photographer booking that has already started, for "staff completes" in the
+        // demo and the end-to-end test. Once it has been completed, the next start-up (every deploy) adds
+        // another one (EXS-TODAY-yyMMdd-2, -3, …) so the step can be shown again the same day.
+        var todayPrefix = $"EXS-TODAY-{today:yyMMdd}";
+        var todays = await db.Bookings.Where(b => b.Reference.StartsWith(todayPrefix)).Select(b => b.Status).ToListAsync(ct);
+        var todayReference = todays.Count == 0 ? todayPrefix : $"{todayPrefix}-{todays.Count + 1}";
+        if (todays.Contains(BookingStatus.Confirmed)) todayReference = todayPrefix;   // one is still waiting: EnsureAsync skips
         var start = StartedEarlierToday(now);
-        await EnsureAsync(db, dispatcher, $"EXS-TODAY-{today:yyMMdd}", people.ClientA, photoshoot,
+        await EnsureAsync(db, dispatcher, todayReference, people.ClientA, photoshoot,
             () => SlotAtAsync(db, today, start, start.AddHours(2) > start ? start.AddHours(2) : new TimeOnly(23, 59), ct),
             photoshootBrief, booking => booking.Confirm(people.Photographer, people.Admin, now), now, ct);
 
