@@ -1,4 +1,6 @@
+using System.Net;
 using System.Threading.RateLimiting;
+using Exsensic.Contracts.Common;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Exsensic.Api.Security;
@@ -52,5 +54,13 @@ public static class RateLimitPolicies
             QueueLimit = 0,
         });
 
-    private static string ClientIp(HttpContext context) => context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    /// <summary>
+    /// The visitor's IP. Calls arrive from the Web app, so the connection's IP is the Web app's for every user;
+    /// the Web app passes the real visitor IP in <see cref="ExsensicHeaders.ClientIp"/>. Only a valid IP
+    /// address is accepted, so the header cannot be used to create arbitrary rate-limit buckets.
+    /// </summary>
+    private static string ClientIp(HttpContext context) =>
+        IPAddress.TryParse(context.Request.Headers[ExsensicHeaders.ClientIp].ToString(), out var visitor)
+            ? visitor.ToString()
+            : context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 }
