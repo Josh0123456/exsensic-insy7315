@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up .NET from global.json
         uses: actions/setup-dotnet@v4
@@ -180,7 +180,7 @@ jobs:
       E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up .NET from global.json
         uses: actions/setup-dotnet@v4
