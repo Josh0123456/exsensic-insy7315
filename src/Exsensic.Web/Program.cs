@@ -71,7 +71,9 @@ builder.Services.AddSingleton<ApiProblemMapper>();
 builder.Services.AddHttpClient<ApiClient>((services, client) =>
     {
         client.BaseAddress = services.GetRequiredService<ApiClientOptions>().BaseAddress;
-        client.Timeout = TimeSpan.FromSeconds(30);
+        // The free Azure SQL database can take up to about a minute to resume after idling,
+        // so allow longer than that before showing "the service took too long".
+        client.Timeout = TimeSpan.FromSeconds(75);
         client.MaxResponseContentBufferSize = 4 * 1024 * 1024;
         client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
     })

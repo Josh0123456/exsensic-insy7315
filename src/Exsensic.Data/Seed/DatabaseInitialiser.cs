@@ -61,7 +61,7 @@ public static class DatabaseInitialiser
         }
 
         if (seedDemoData)
-            await SeedDemoDataAsync(db, userManager, config, logger, ct);
+            await SeedDemoDataAsync(db, userManager, config, logger, scope.ServiceProvider, ct);
     }
 
     private static async Task SeedDemoDataAsync(
@@ -69,6 +69,7 @@ public static class DatabaseInitialiser
         UserManager<ApplicationUser> userManager,
         IConfiguration config,
         ILogger logger,
+        IServiceProvider serviceProvider,
         CancellationToken ct)
     {
         var demoPassword = config["Seed:DemoPassword"];
@@ -213,6 +214,16 @@ public static class DatabaseInitialiser
         }
 
         await db.SaveChangesAsync(ct);
+
+        // Sample bookings in every status (Josh, taking over P3 step 16), through the real booking rules.
+        var admin = config["Seed:AdminEmail"] is { Length: > 0 } adminEmail ? await userManager.FindByEmailAsync(adminEmail) : null;
+        if (clientA is not null && clientB is not null && admin is not null)
+        {
+            await DemoBookingSeeder.SeedAsync(db, serviceProvider.GetService<Exsensic.Core.Bookings.Observers.BookingEventDispatcher>(),
+                new DemoBookingSeeder.People(clientA.Id, clientB.Id, photographer.Id, webDev.Id, social.Id, admin.Id),
+                serviceProvider.GetService<TimeProvider>() ?? TimeProvider.System, logger, ct);
+        }
+
         logger.LogInformation("Demo seed complete.");
     }
 

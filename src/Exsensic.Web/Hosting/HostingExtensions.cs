@@ -59,6 +59,7 @@ public static class HostingExtensions
     public static WebApplication UseExsensicHosting(this WebApplication app)
     {
         app.UseForwardedHeaders();
+        AddSecurityHeaders(app);
 
         if (!app.Environment.IsDevelopment())
         {
@@ -76,4 +77,25 @@ public static class HostingExtensions
 
         return app;
     }
+
+    /// <summary>
+    /// Security headers on every page (Dean's step 15, taken over by Josh). Scripts, styles, fonts and
+    /// images may only come from this site (all CSS and JS live in wwwroot; no inline code), pages cannot
+    /// be framed, and forms can only post back to this site.
+    /// </summary>
+    private static void AddSecurityHeaders(WebApplication app) => app.Use((context, next) =>
+    {
+        context.Response.OnStarting(() =>
+        {
+            var headers = context.Response.Headers;
+            headers.ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+                + "font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+            headers.XContentTypeOptions = "nosniff";
+            headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            headers.XFrameOptions = "DENY";
+            headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+            return Task.CompletedTask;
+        });
+        return next(context);
+    });
 }
