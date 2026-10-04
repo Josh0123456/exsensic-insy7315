@@ -1,0 +1,103 @@
+@model Exsensic.Web.Models.AdminCatalog.AdminUsersViewModel
+@{
+    ViewData["Title"] = "Users";
+    var totalPages = Math.Max(1, (int)Math.Ceiling(Model.TotalCount / (double)Model.PageSize));
+}
+
+<partial name="_PageHeader" model='@(new PageHeaderViewModel
+         {
+             Title = "Users",
+             Eyebrow = "Admin",
+             Subtitle = "Staff accounts and activation.",
+             ActionText = "Add staff",
+             ActionUrl = Url.Action("Create")
+         })' />
+
+<form method="get" class="filter-form" aria-label="User filters">
+    <div class="form-field">
+        <label for="role">Role</label>
+        <select id="role" name="role">
+            <option value="">All roles</option>
+            <option value="Client" selected="@(Model.Role == "Client")">Client</option>
+            <option value="Staff" selected="@(Model.Role == "Staff")">Staff</option>
+            <option value="Admin" selected="@(Model.Role == "Admin")">Admin</option>
+        </select>
+    </div>
+    <button type="submit" class="button-primary">Apply</button>
+    <a class="button-secondary" asp-action="Index">Clear</a>
+</form>
+
+@if (!Model.IntegrationAvailable)
+{
+    <partial name="_EmptyState" model='@(new EmptyStateViewModel
+             {
+                 Title = "Users are unavailable",
+                 Message = "The list could not be loaded. Please try again shortly."
+             })' />
+}
+else if (Model.Users.Count == 0)
+{
+    <partial name="_EmptyState" model='@(new EmptyStateViewModel
+             {
+                 Title = "No users found",
+                 Message = "Try a different role filter."
+             })' />
+}
+else
+{
+    <table class="booking-table">
+        <caption>Users</caption>
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Role</th>
+                <th scope="col">State</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.Users)
+            {
+                <tr>
+                    <th scope="row">@user.FullName</th>
+                    <td>@user.Email</td>
+                    <td>@user.Role</td>
+                    <td>@(user.IsActive ? "Active" : "Inactive")</td>
+                    <td>
+                        <form method="post" asp-action="Toggle" asp-route-id="@user.UserId" data-single-submit class="inline-form">
+                            <input type="hidden" name="isActive" value="@((!user.IsActive).ToString().ToLowerInvariant())" />
+                            <button type="submit" class="button-secondary" data-confirm-dialog="toggle-user-@user.UserId">
+                                @(user.IsActive ? "Deactivate" : "Activate")
+                            </button>
+                        </form>
+                        <partial name="_ConfirmDialog" model='@(new ConfirmDialogViewModel
+                                 {
+                                     Id = $"toggle-user-{user.UserId}",
+                                     Title = user.IsActive ? "Deactivate this user?" : "Activate this user?",
+                                     Message = user.IsActive
+                                                        ? "They will be signed out on their next request and cannot sign in until you reactivate them."
+                                                        : "They will be able to sign in again.",
+                                     ConfirmText = user.IsActive ? "Deactivate" : "Activate"
+                                 })' />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (totalPages > 1)
+    {
+        <nav class="pager" aria-label="User pages">
+            @if (Model.Page > 1)
+            {
+                <a class="button-secondary" asp-action="Index" asp-route-role="@Model.Role" asp-route-page="@(Model.Page - 1)" rel="prev">Previous</a>
+            }
+            <p class="pager-summary">Page @Model.Page of @totalPages</p>
+            @if (Model.Page < totalPages)
+            {
+                <a class="button-secondary" asp-action="Index" asp-route-role="@Model.Role" asp-route-page="@(Model.Page + 1)" rel="next">Next</a>
+            }
+        </nav>
+    }
+}

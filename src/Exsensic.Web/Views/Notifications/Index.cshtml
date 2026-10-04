@@ -1,0 +1,63 @@
+@model Exsensic.Web.Models.Notifications.NotificationListViewModel
+@{
+    ViewData["Title"] = "Notifications";
+    var subtitle = Model.UnreadCount switch
+    {
+        0 => "You're all caught up.",
+        1 => "You have 1 unread notification.",
+        var n => $"You have {n} unread notifications.",
+    };
+
+    // Each role opens bookings on its own screen (docs/CONTRACTS.md §8).
+    var bookingPath = User.IsInRole("Admin") ? "/Admin/Bookings/" : User.IsInRole("Staff") ? "/Staff/Bookings/" : "/Bookings/";
+}
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Notifications", Eyebrow = "Updates", Subtitle = Model.IntegrationAvailable ? subtitle : null })' />
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable)
+{
+    @if (Model.Notifications.Count == 0)
+    {
+        <partial name="_EmptyState" model='@(new EmptyStateViewModel { Title = "No notifications yet", Message = "When one of your bookings changes, you will see an update here." })' />
+    }
+    else
+    {
+        <ul class="list-unstyled booking-grid" aria-label="Your notifications">
+            @foreach (var notification in Model.Notifications)
+            {
+                <li class="booking-card component-card">
+                    <div class="card-heading">
+                        @if (notification.IsRead)
+                        {
+                            <p class="eyebrow">Read</p>
+                        }
+                        else
+                        {
+                            <p class="eyebrow"><strong>New</strong></p>
+                        }
+                        <p class="text-muted-ui"><time datetime="@notification.CreatedAtUtc.ToString("O")">@notification.CreatedAtUtc.ToOffset(TimeSpan.FromHours(2)).ToString("ddd d MMM yyyy, HH:mm")</time></p>
+                    </div>
+                    @if (notification.IsRead)
+                    {
+                        <p>@notification.Message</p>
+                    }
+                    else
+                    {
+                        <p><strong>@notification.Message</strong></p>
+                    }
+                    <div class="component-actions">
+                        @if (notification.BookingId is int bookingId)
+                        {
+                            <a class="button-secondary" href="@(bookingPath + bookingId)">View booking<span class="visually-hidden"> for this notification</span></a>
+                        }
+                        @if (!notification.IsRead)
+                        {
+                            <form asp-action="MarkRead" asp-route-id="@notification.Id" method="post" data-single-submit>
+                                <button class="button-secondary" type="submit">Mark as read<span class="visually-hidden">: @notification.Message</span></button>
+                            </form>
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+}

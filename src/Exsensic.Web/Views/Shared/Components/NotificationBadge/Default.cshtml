@@ -1,0 +1,15 @@
+@model int
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var label = Model == 1 ? "1 unread notification" : $"{Model} unread notifications";
+}
+<li class="nav-item">
+    <a class="nav-link" asp-area="" asp-controller="Notifications" asp-action="Index" aria-current="@(controller == "Notifications" ? "page" : null)">
+        Notifications
+        @if (Model > 0)
+        {
+            <span class="status-badge status-requested" aria-hidden="true">@Model</span>
+            <span class="visually-hidden">, @label</span>
+        }
+    </a>
+</li>

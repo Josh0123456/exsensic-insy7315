@@ -1,0 +1,10 @@
+@model EmptyStateViewModel
+<div class="empty-state">
+    <span class="empty-state-mark" aria-hidden="true">—</span>
+    <p class="empty-state-title">@Model.Title</p>
+    <p>@Model.Message</p>
+    @if (!string.IsNullOrWhiteSpace(Model.ActionText) && Url.IsLocalUrl(Model.ActionUrl))
+    {
+        <a class="button-secondary" href="@Model.ActionUrl">@Model.ActionText</a>
+    }
+</div>

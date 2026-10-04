@@ -1,0 +1,52 @@
+:root {
+    color-scheme: dark;
+    --brand: #c4f455;
+    --brand-strong: #a9d83f;
+    --ink: #f5f6f2;
+    --ink-muted: #b5b9b1;
+    --surface: #20231f;
+    --surface-alt: #121511;
+    --border: #454c40;
+    --control-border: #85907c;
+    --on-brand: #121511;
+    --success: #7fe0a7;
+    --warning: #f5ce72;
+    --danger: #ff9eaa;
+    --info: #94caff;
+
+    /* Always display a written label alongside a booking status colour. */
+    --status-requested: var(--warning);
+    --status-confirmed: var(--info);
+    --status-completed: var(--success);
+    --status-cancelled: var(--danger);
+
+    --space-4: 4px;
+    --space-8: 8px;
+    --space-12: 12px;
+    --space-16: 16px;
+    --space-24: 24px;
+    --space-32: 32px;
+    --space-48: 48px;
+    --space-64: 64px;
+
+    /* Rem units preserve user text-size preferences (16px default). */
+    --type-12: 0.75rem;
+    --type-14: 0.875rem;
+    --type-16: 1rem;
+    --type-18: 1.125rem;
+    --type-20: 1.25rem;
+    --type-24: 1.5rem;
+    --type-30: 1.875rem;
+    --type-36: 2.25rem;
+    --weight-regular: 400;
+    --weight-bold: 700;
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+    --radius-small: 6px;
+    --radius-medium: 12px;
+    --radius-large: 24px;
+    --radius-pill: 999px;
+    --shadow-small: 0 2px 8px rgb(23 44 60 / 6%);
+    --shadow-medium: 0 12px 32px rgb(23 44 60 / 8%);
+    --content-width: 1120px;
+}

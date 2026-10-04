@@ -1,0 +1,26 @@
+@model Exsensic.Web.Models.Bookings.RescheduleViewModel
+@{ ViewData["Title"] = "Reschedule booking"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Find a better time.", Eyebrow = "Reschedule", Subtitle = Model.Detail?.Booking?.Reference })' />
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.Detail is not null) { <partial name="_BookingInformation" model="Model.Detail" /> }
+@if (Model.Detail?.Booking?.BookingStatus == "Confirmed")
+{
+    <p class="policy-note">Rescheduling this confirmed booking will return it to Requested. It will need approval again.</p>
+}
+@if (Model.IntegrationAvailable)
+{
+    <nav class="component-actions" aria-label="Reschedule dates">
+        <a class="button-secondary" asp-action="Reschedule" asp-route-id="@Model.Id" asp-route-from="@Model.From.AddDays(-14).ToString("yyyy-MM-dd")">Earlier dates</a>
+        <a class="button-secondary" asp-action="Reschedule" asp-route-id="@Model.Id" asp-route-from="@Model.From.AddDays(14).ToString("yyyy-MM-dd")">Show later dates</a>
+    </nav>
+}
+<form asp-action="Reschedule" asp-route-id="@Model.Id" method="post" data-single-submit>
+    <input asp-for="RowVersion" type="hidden" /><input asp-for="From" type="hidden" />
+    <fieldset disabled="@(!Model.IntegrationAvailable || Model.Problem?.Code == ErrorCodes.ConcurrencyConflict)">
+        <legend>Choose a new time for the same service</legend>
+        @if (Model.Picker is not null) { <partial name="_SlotPicker" model="Model.Picker" /> }
+        <span asp-validation-for="NewTimeSlotId" id="NewTimeSlotId-error" class="field-error"></span>
+        <div class="component-actions"><button class="button-primary" type="submit" disabled="@(Model.Picker is null || !Model.Picker.Dates.Any(day => day.IsAvailable && day.Slots.Any(slot => slot.IsAvailable)))">Request new time</button></div>
+    </fieldset>
+</form>
+<a class="text-link" asp-action="Details" asp-route-id="@Model.Id">Back to booking</a>

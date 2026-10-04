@@ -1,0 +1,69 @@
+@model Exsensic.Web.Models.AdminCatalog.AdminTimeSlotGenerateViewModel
+@{
+    ViewData["Title"] = "Generate slots";
+}
+
+<partial name="_PageHeader" model='@(new PageHeaderViewModel
+         {
+             Title = "Generate slots",
+             Eyebrow = "Admin",
+             Subtitle = "Create bookable windows over a date range."
+         })' />
+
+<div class="form-panel form-panel-wide">
+    <form method="post" asp-action="Generate" data-single-submit>
+        <div asp-validation-summary="All" class="validation-summary" role="alert" tabindex="-1"></div>
+
+        <div class="form-grid">
+            <div class="form-field">
+                <label asp-for="FromDate">From (required)</label>
+                <input asp-for="FromDate" type="date" />
+                <span asp-validation-for="FromDate" class="field-error"></span>
+            </div>
+            <div class="form-field">
+                <label asp-for="ToDate">To (required)</label>
+                <input asp-for="ToDate" type="date" />
+                <span asp-validation-for="ToDate" class="field-error"></span>
+            </div>
+        </div>
+
+        <fieldset>
+            <legend>Weekdays (required)</legend>
+            @foreach (var day in new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday })
+            {
+                var isChecked = Model.Weekdays.Contains(day);
+                <label class="inline-choice">
+                    <input type="checkbox" name="Weekdays" value="@day" checked="@isChecked" />
+                    @day
+                </label>
+            }
+        </fieldset>
+
+        <div class="form-field">
+            <label asp-for="StartTimesText">Start times (required)</label>
+            <input asp-for="StartTimesText" type="text" />
+            <p class="field-hint">Comma-separated 24-hour times, for example 09:00, 12:00, 14:00.</p>
+            <span asp-validation-for="StartTimesText" class="field-error"></span>
+        </div>
+
+        <div class="form-field">
+            <label asp-for="DurationMinutes">Duration in minutes (required)</label>
+            <input asp-for="DurationMinutes" type="number" min="15" max="480" />
+            <span asp-validation-for="DurationMinutes" class="field-error"></span>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ResultSummary))
+        {
+            <p class="policy-note">@Model.ResultSummary</p>
+        }
+
+        <div class="component-actions">
+            <button type="submit" class="button-primary">Generate slots</button>
+            <a class="button-secondary" asp-action="Index">Back to slots</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

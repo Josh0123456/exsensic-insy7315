@@ -1,0 +1,27 @@
+@model Exsensic.Web.Models.AdminCatalog.AdminServiceFormViewModel
+@{
+    ViewData["Title"] = "Edit service";
+}
+
+<partial name="_PageHeader" model='@(new PageHeaderViewModel
+         {
+             Title = "Edit service",
+             Eyebrow = "Admin",
+             Subtitle = Model.Name
+         })' />
+
+<div class="form-panel form-panel-wide">
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id" data-single-submit>
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="RowVersion" type="hidden" />
+        <partial name="_ServiceForm" model="Model" />
+        <div class="component-actions">
+            <button type="submit" class="button-primary">Save changes</button>
+            <a class="button-secondary" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

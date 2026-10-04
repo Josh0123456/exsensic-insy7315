@@ -1,0 +1,40 @@
+@model Exsensic.Web.Models.Admin.AdminReviewViewModel
+@{ ViewData["Title"] = "Review booking"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = Model.Detail?.Booking?.Reference ?? "Review booking", Eyebrow = "Admin workspace", Subtitle = Model.Detail?.Booking?.ServiceName })' />
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable && Model.Detail is not null)
+{
+    <partial name="_BookingInformation" model="Model.Detail" />
+    @if (Model.Detail.CanReview)
+    {
+        <div class="review-grid">
+            <section class="form-panel" aria-labelledby="confirm-heading">
+                <h2 id="confirm-heading">Confirm &amp; assign</h2>
+                <p>Choose a qualified, available staff member from the returned options.</p>
+                @if (Model.StaffOptions.Count == 0) { <p class="policy-note">No available staff were returned. Reload to check again.</p> }
+                <form asp-action="Confirm" asp-route-id="@Model.Id" method="post" data-single-submit>
+                    <input asp-for="Confirm.RowVersion" type="hidden" />
+                    <fieldset disabled="@(Model.StaffOptions.Count == 0 || Model.Problem?.Code == ErrorCodes.ConcurrencyConflict)">
+                        <legend class="visually-hidden">Assign staff and confirm</legend>
+                        <div class="form-field"><label asp-for="Confirm.StaffUserId">Assign staff (required)</label><select asp-for="Confirm.StaffUserId" asp-items="Model.StaffOptions" required aria-describedby="Confirm-StaffUserId-error"><option value="">Choose a staff member</option></select><span asp-validation-for="Confirm.StaffUserId" id="Confirm-StaffUserId-error" class="field-error"></span></div>
+                        <button class="button-primary" type="submit" data-confirm-dialog="confirm-request">Confirm booking</button>
+                    </fieldset>
+                </form>
+            </section>
+            <section class="form-panel" aria-labelledby="reject-heading">
+                <h2 id="reject-heading">Unable to accept?</h2><p>Rejection changes the booking to Cancelled and records your reason.</p>
+                <form asp-action="Reject" asp-route-id="@Model.Id" method="post" data-single-submit>
+                    <input asp-for="Reject.RowVersion" type="hidden" />
+                    <fieldset disabled="@(Model.Problem?.Code == ErrorCodes.ConcurrencyConflict)">
+                        <legend class="visually-hidden">Reject request</legend>
+                        <div class="form-field"><label asp-for="Reject.Reason">Reason for rejection (required)</label><textarea asp-for="Reject.Reason" rows="4" required aria-describedby="Reject-Reason-error"></textarea><span asp-validation-for="Reject.Reason" id="Reject-Reason-error" class="field-error"></span></div>
+                        <button class="button-secondary" type="submit" data-confirm-dialog="reject-request">Reject request</button>
+                    </fieldset>
+                </form>
+            </section>
+        </div>
+        <partial name="_ConfirmDialog" model='@(new ConfirmDialogViewModel { Id = "confirm-request", Title = "Confirm this booking?", Message = "The selected staff member will be assigned if they are still available.", ConfirmText = "Confirm booking" })' />
+        <partial name="_ConfirmDialog" model='@(new ConfirmDialogViewModel { Id = "reject-request", Title = "Reject this request?", Message = "The booking will become Cancelled with the reason you entered.", ConfirmText = "Reject request" })' />
+    }
+}
+<a class="text-link" asp-action="Bookings">Back to bookings</a>

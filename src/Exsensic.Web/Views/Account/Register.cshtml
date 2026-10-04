@@ -1,0 +1,49 @@
+@model Exsensic.Web.Models.Account.RegisterViewModel
+@{ ViewData["Title"] = "Create an account"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Make room for your next idea.", Eyebrow = "Client account", Subtitle = "Create an account to request creative services and follow every booking." })' />
+<section class="form-panel form-panel-wide" aria-labelledby="register-heading">
+    <h2 id="register-heading">Your details</h2>
+    <partial name="_JourneyFeedback" model="Model" />
+                    <p class="field-hint" id="password-guidance">Use a long, unique password that you do not use elsewhere. Use at least 10 characters, including an uppercase letter, a lowercase letter and a number.</p>
+    <form asp-action="Register" method="post" data-single-submit>
+        <fieldset disabled="@(!Model.IntegrationAvailable)">
+            <legend class="visually-hidden">Client registration</legend>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label asp-for="FullName">Full name (required)</label>
+                    <input asp-for="FullName" type="text" autocomplete="name" aria-describedby="FullName-error" />
+                    <span asp-validation-for="FullName" id="FullName-error" class="field-error"></span>
+</div>
+                <div class="form-field">
+                    <label asp-for="CompanyName">Company name (required)</label>
+                    <input asp-for="CompanyName" type="text" autocomplete="organization" aria-describedby="CompanyName-error" />
+                    <span asp-validation-for="CompanyName" id="CompanyName-error" class="field-error"></span>
+</div>
+                <div class="form-field">
+                    <label asp-for="Email">Email address (required)</label>
+                    <input asp-for="Email" type="email" autocomplete="email" aria-describedby="Email-error" />
+                    <span asp-validation-for="Email" id="Email-error" class="field-error"></span>
+</div>
+                <div class="form-field">
+                    <label asp-for="Phone">Phone number (required)</label>
+                    <input asp-for="Phone" type="tel" autocomplete="tel" aria-describedby="Phone-error" />
+                    <span asp-validation-for="Phone" id="Phone-error" class="field-error"></span>
+</div>
+                <div class="form-field">
+                    <label asp-for="Password">Password (required)</label>
+                    <input asp-for="Password" type="password" autocomplete="new-password" aria-describedby="Password-error Password-hint password-guidance" />
+                    <p id="Password-hint" class="field-hint">Use a unique password.</p>
+                    <span asp-validation-for="Password" id="Password-error" class="field-error"></span>
+</div>
+                <div class="form-field">
+                    <label asp-for="ConfirmPassword">Confirm password (required)</label>
+                    <input asp-for="ConfirmPassword" type="password" autocomplete="new-password" aria-describedby="ConfirmPassword-error" />
+                    <span asp-validation-for="ConfirmPassword" id="ConfirmPassword-error" class="field-error"></span>
+</div>
+            </div>
+            <button class="button-primary" type="submit">Create client account</button>
+        </fieldset>
+    </form>
+                    <p class="form-afterword">Already have an account? <a asp-action="Login">Sign in</a>.</p>
+</section>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

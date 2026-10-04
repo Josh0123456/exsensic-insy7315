@@ -1,0 +1,32 @@
+@model ServiceCardViewModel
+<article class="service-card component-card" data-service-id="@Model.ServiceId">
+    <p class="eyebrow">@Model.Category</p>
+    <h3>@Model.Name</h3>
+    <p>@Model.Description</p>
+    <dl class="card-facts">
+        <div>
+            <dt>Duration</dt>
+            <dd>@Model.DurationMinutes minutes</dd>
+        </div>
+        @if (Model.StartingPrice is decimal price)
+        {
+            <div>
+                <dt>Starting price</dt>
+                <dd>R @price.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))</dd>
+            </div>
+        }
+    </dl>
+    @if (Url.IsLocalUrl(Model.DetailsUrl) || Url.IsLocalUrl(Model.BookingUrl))
+    {
+        <div class="component-actions">
+            @if (Url.IsLocalUrl(Model.DetailsUrl))
+            {
+                <a class="button-secondary" href="@Model.DetailsUrl" aria-label="View details for @Model.Name">View details</a>
+            }
+            @if (Url.IsLocalUrl(Model.BookingUrl))
+            {
+                <a class="button-primary" href="@Model.BookingUrl" aria-label="Book @Model.Name">Book service</a>
+            }
+        </div>
+    }
+</article>

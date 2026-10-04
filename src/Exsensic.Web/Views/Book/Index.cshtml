@@ -1,0 +1,23 @@
+@model Exsensic.Web.Models.Book.SlotStepViewModel
+@{ ViewData["Title"] = "Choose a time"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Make time for your next idea.", Eyebrow = "Step 1 of 2", Subtitle = Model.Service?.Name ?? "Choose an available time for your service." })' />
+<ol class="wizard-progress" aria-label="Booking progress"><li aria-current="step">1. Time slot</li><li>2. Requirements</li></ol>
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable)
+{
+    <nav class="component-actions" aria-label="Availability dates">
+        <a class="button-secondary" asp-action="Index" asp-route-serviceId="@Model.ServiceId" asp-route-from="@Model.From.AddDays(-14).ToString("yyyy-MM-dd")">Earlier dates</a>
+        <span>@Model.From.ToString("d MMM") – @Model.From.AddDays(13).ToString("d MMM yyyy")</span>
+        <a class="button-secondary" asp-action="Index" asp-route-serviceId="@Model.ServiceId" asp-route-from="@Model.From.AddDays(14).ToString("yyyy-MM-dd")">Show later dates</a>
+    </nav>
+}
+<form asp-action="Index" asp-route-serviceId="@Model.ServiceId" method="post" data-single-submit>
+    <input asp-for="From" type="hidden" />
+    <fieldset disabled="@(!Model.IntegrationAvailable)">
+        <legend class="visually-hidden">Select your booking time</legend>
+        @if (Model.Picker is not null) { <partial name="_SlotPicker" model="Model.Picker" /> }
+        <span asp-validation-for="TimeSlotId" id="TimeSlotId-error" class="field-error"></span>
+        <div class="component-actions"><button type="submit" class="button-primary" disabled="@(Model.Picker is null || !Model.Picker.Dates.Any(day => day.IsAvailable && day.Slots.Any(slot => slot.IsAvailable)))">Continue to requirements</button></div>
+    </fieldset>
+</form>
+<a class="text-link" asp-controller="Services" asp-action="Index">Back to services</a>

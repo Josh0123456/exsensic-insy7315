@@ -1,0 +1,45 @@
+@model BookingCardViewModel
+<article class="booking-card component-card">
+    <div class="card-heading">
+        <p class="eyebrow">Booking @Model.Reference</p>
+        <partial name="_StatusBadge" model="@(new StatusBadgeViewModel { Status = Model.BookingStatus })" />
+    </div>
+    <h3>@Model.ServiceName</h3>
+    <dl class="card-facts">
+        <div>
+            <dt>Date</dt>
+            <dd><time datetime="@Model.Date.ToString("yyyy-MM-dd")">@Model.Date.ToString("dddd, d MMMM yyyy")</time></dd>
+        </div>
+        @if (Model.StartTime.HasValue || Model.EndTime.HasValue)
+        {
+            <div>
+                <dt>Time</dt>
+                <dd>
+                    @if (Model.StartTime is TimeOnly start)
+                    {
+                        <time datetime="@start.ToString("HH:mm")">@start.ToString("HH:mm")</time>
+                    }
+                    @if (Model.EndTime is TimeOnly end)
+                    {
+                        <span> @(Model.StartTime.HasValue ? "–" : "Ends at") </span>
+                        <time datetime="@end.ToString("HH:mm")">@end.ToString("HH:mm")</time>
+                    }
+                </dd>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.AssignedStaff))
+        {
+            <div><dt>Assigned staff</dt><dd>@Model.AssignedStaff</dd></div>
+        }
+    </dl>
+    <div class="component-actions">
+        @if (Url.IsLocalUrl(Model.DetailsUrl))
+        {
+            <a class="button-secondary" href="@Model.DetailsUrl" aria-label="View booking @Model.Reference">View booking</a>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.ActionText) && Url.IsLocalUrl(Model.ActionUrl))
+        {
+            <a class="button-primary" href="@Model.ActionUrl">@Model.ActionText</a>
+        }
+    </div>
+</article>

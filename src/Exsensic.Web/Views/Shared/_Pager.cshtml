@@ -1,0 +1,23 @@
+@model PagerViewModel
+@if (Model.TotalPages > 0)
+{
+    <nav class="pager" aria-label="@Model.Label">
+        @if (Model.CurrentPage > 1 && Url.IsLocalUrl(Model.PreviousUrl))
+        {
+            <a class="button-secondary" href="@Model.PreviousUrl" rel="prev" aria-label="Go to previous page">Previous</a>
+        }
+        else
+        {
+            <button class="button-secondary" type="button" disabled aria-label="Previous page unavailable">Previous</button>
+        }
+        <p class="pager-summary">Page @Model.CurrentPage of @Model.TotalPages</p>
+        @if (Model.CurrentPage < Model.TotalPages && Url.IsLocalUrl(Model.NextUrl))
+        {
+            <a class="button-secondary" href="@Model.NextUrl" rel="next" aria-label="Go to next page">Next</a>
+        }
+        else
+        {
+            <button class="button-secondary" type="button" disabled aria-label="Next page unavailable">Next</button>
+        }
+    </nav>
+}

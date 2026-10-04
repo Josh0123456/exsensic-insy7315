@@ -1,0 +1,42 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var links = new List<(string Controller, string Action, string Label)>
+    {
+        ("Home", "Index", "Home"), ("Services", "Index", "Services")
+    };
+    if (User.IsInRole(RoleNames.Client)) links.Add(("Bookings", "Index", "My bookings"));
+    if (User.IsInRole(RoleNames.Staff)) links.Add(("Staff", "Index", "My schedule"));
+    if (User.IsInRole(RoleNames.Admin)) links.Add(("Admin", "Index", "Admin"));
+    links.Add(("Home", "Privacy", "Privacy"));
+    if (User.Identity?.IsAuthenticated == true) links.Add(("Account", "Profile", "Profile"));
+    else
+    {
+        links.Add(("Account", "Login", "Sign in"));
+        links.Add(("Account", "Register", "Register"));
+    }
+}
+<nav class="navbar navbar-expand-lg site-navigation" aria-label="Main navigation">
+    <div class="page-container">
+        <a class="site-brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="Exsensic home">
+            <span class="brand-mark" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M5 3h15v4H9v3h9v4H9v3h11v4H5z" /></svg></span> Exsensic
+        </a>
+        <button class="navbar-toggler navigation-toggle" type="button"
+                data-bs-toggle="collapse" data-bs-target="#primary-navigation"
+                aria-controls="primary-navigation" aria-expanded="false">Menu</button>
+        <div id="primary-navigation" class="collapse navbar-collapse justify-content-end">
+            <ul class="navbar-nav">
+                @foreach (var link in links)
+                {
+                    var active = controller == link.Controller && (link.Controller != "Home" && link.Controller != "Account" || action == link.Action);
+                    <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="@link.Controller" asp-action="@link.Action" aria-current="@(active ? "page" : null)">@link.Label</a></li>
+                }
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <vc:notification-badge />
+                    <li class="nav-item"><form class="nav-logout" asp-controller="Account" asp-action="Logout" method="post" data-single-submit><button class="nav-link" type="submit">Sign out</button></form></li>
+                }
+            </ul>
+        </div>
+    </div>
+</nav>

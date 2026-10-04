@@ -1,0 +1,29 @@
+@model Exsensic.Web.Models.Staff.StaffScheduleViewModel
+@{ ViewData["Title"] = "Your schedule"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Your week, ready to create.", Eyebrow = "Staff workspace", Subtitle = $"{Model.WeekStart:d MMM} – {Model.WeekStart.AddDays(6):d MMM yyyy}" })' />
+<nav class="component-actions" aria-label="Schedule weeks">
+    <a class="button-secondary" asp-action="Index" asp-route-week="@Model.WeekStart.AddDays(-7).ToString("yyyy-MM-dd")">Previous week</a>
+    <a class="button-secondary" asp-action="Index">This week</a>
+    <a class="button-secondary" asp-action="Index" asp-route-week="@Model.WeekStart.AddDays(7).ToString("yyyy-MM-dd")">Next week</a>
+</nav>
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable)
+{
+    @if (Model.Entries.Count == 0)
+    {
+        <h2 class="section-title">Scheduled work</h2>
+        <partial name="_EmptyState" model='@(new EmptyStateViewModel { Title = "Nothing scheduled this week", Message = "Assigned work will appear here when it is available." })' />
+    }
+    @foreach (var day in Model.Entries.GroupBy(item => item.Booking.Date).OrderBy(group => group.Key))
+    {
+        <section class="schedule-day">
+            <h2>@day.Key.ToString("dddd, d MMMM") @if (day.Key == Model.Today) { <span class="today-label">Today</span> }</h2>
+            <div class="booking-grid">
+            @foreach (var entry in day)
+            {
+                <div>@if (!string.IsNullOrWhiteSpace(entry.ClientCompany)) { <p class="eyebrow">@entry.ClientCompany</p> }<partial name="_BookingCard" model="entry.Booking" /></div>
+            }
+            </div>
+        </section>
+    }
+}

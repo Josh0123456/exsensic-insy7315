@@ -1,0 +1,22 @@
+@model Exsensic.Web.Models.Bookings.BookingDetailViewModel
+@{ ViewData["Title"] = "Booking request"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = Model.IntegrationAvailable && Model.Booking is not null ? "Your booking request is recorded." : "Booking request", Eyebrow = "Your next creative chapter" })' />
+<partial name="_JourneyFeedback" model="Model" />
+@if (Model.IntegrationAvailable && Model.Booking is not null)
+{
+    <section class="confirmation-panel">
+        <h2>@Model.Booking.Reference</h2>
+        <p>@Model.Booking.ServiceName</p>
+        <p>@Model.Booking.Date.ToString("dddd, d MMMM yyyy") · @Model.Booking.StartTime?.ToString("HH:mm") @if (Model.Booking.EndTime is TimeOnly end) { <span>– @end.ToString("HH:mm")</span> } SAST</p>
+        <partial name="_StatusBadge" model="@(new StatusBadgeViewModel { Status = Model.Booking.BookingStatus })" />
+        @if (Model.Booking.BookingStatus == "Requested")
+        {
+            <p>Your request is awaiting approval. The team will review it before confirming your booking.</p>
+        }
+        else { <p>The booking's current status is shown above. Open the details for its latest progress.</p> }
+        <div class="component-actions">
+            <a class="button-primary" asp-action="Details" asp-route-id="@Model.Id">View booking</a>
+            <a class="button-secondary" asp-controller="Services" asp-action="Index">Browse services</a>
+        </div>
+    </section>
+}

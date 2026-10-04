@@ -1,8 +1,36 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Creative work. Made possible.";
 }
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="marketing-hero" aria-labelledby="hero-heading">
+    <p class="eyebrow">Exsensic / Creative &amp; digital</p>
+    <h1 id="hero-heading">Big ideas.<br /><span>Made visible.</span></h1>
+    <p class="hero-intro">Photography, websites and social content for businesses ready to be seen. Explore our services and organise your next creative project in one place.</p>
+    <div class="component-actions">
+        <a class="button-primary" asp-controller="Services" asp-action="Index">Book a service</a>
+        <a class="button-secondary" href="#how-booking-works">How booking works</a>
+    </div>
+</section>
+<section class="marketing-section" aria-labelledby="creative-heading">
+    <div>
+        <p class="eyebrow">What we do</p>
+        <h2 id="creative-heading">Your brand.<br />A fresh perspective.</h2>
+        <p class="section-intro">From a considered first impression to content that starts a conversation, Exsensic helps your business tell its story.</p>
+        <a class="text-link" asp-controller="Services" asp-action="Index">Explore the service catalogue</a>
+    </div>
+    <ul class="creative-disciplines" role="list" aria-label="Our creative disciplines">
+        <li><span aria-hidden="true">01 /</span> Photoshoots</li>
+        <li><span aria-hidden="true">02 /</span> Websites</li>
+        <li><span aria-hidden="true">03 /</span> Instagram</li>
+        <li><span aria-hidden="true">04 /</span> TikTok</li>
+    </ul>
+</section>
+<section class="content-section" id="how-booking-works" aria-labelledby="booking-heading">
+    <p class="eyebrow">From idea to action</p>
+    <h2 id="booking-heading">How booking works</h2>
+    <p class="section-intro">A clear path from choosing a service to sending your brief. Available services and times are shown in the live catalogue.</p>
+    <ol class="booking-steps" role="list">
+        <li><span class="step-label">Step 1</span><h3>Choose a service</h3><p>Explore what is on offer and find the right fit for your project.</p></li>
+        <li><span class="step-label">Step 2</span><h3>Select an available time</h3><p>Choose a date and time from the available slots.</p></li>
+        <li><span class="step-label">Step 3</span><h3>Submit your requirements</h3><p>Tell us what you need and send your request for the team to review.</p></li>
+    </ol>
+</section>

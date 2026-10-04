@@ -1,0 +1,79 @@
+@model Exsensic.Web.Models.AdminCatalog.AdminServiceListViewModel
+@{
+    ViewData["Title"] = "Services";
+}
+
+<partial name="_PageHeader" model='@(new PageHeaderViewModel
+         {
+             Title = "Services",
+             Eyebrow = "Admin",
+             Subtitle = "Everything Exsensic offers clients.",
+             ActionText = "New service",
+             ActionUrl = Url.Action("Create")
+         })' />
+
+@if (!Model.IntegrationAvailable)
+{
+    <partial name="_EmptyState" model='@(new EmptyStateViewModel
+             {
+                 Title = "Services are unavailable",
+                 Message = "The catalogue could not be loaded. Please try again shortly."
+             })' />
+}
+else if (Model.Services.Count == 0)
+{
+    <partial name="_EmptyState" model='@(new EmptyStateViewModel
+             {
+                 Title = "No services yet",
+                 Message = "Add the first service to start taking bookings.",
+                 ActionText = "New service",
+                 ActionUrl = Url.Action("Create")
+             })' />
+}
+else
+{
+    <table class="booking-table">
+        <caption>All services</caption>
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Category</th>
+                <th scope="col">Duration</th>
+                <th scope="col">Price</th>
+                <th scope="col">State</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var service in Model.Services)
+            {
+                <tr>
+                    <th scope="row">@service.Name</th>
+                    <td>@service.Category</td>
+                    <td>@service.DurationMinutes min</td>
+                    <td>@(service.BasePrice.HasValue ? $"R {service.BasePrice.Value:N2}" : "No price")</td>
+                    <td>@(service.IsActive ? "Active" : "Archived")</td>
+                    <td>
+                        <a href="@Url.Action("Edit", new { id = service.Id })">Edit<span class="visually-hidden"> @service.Name</span></a>
+                        <form method="post" asp-action="Toggle" asp-route-id="@service.Id" data-single-submit class="inline-form">
+                            <input type="hidden" name="rowVersion" value="@service.RowVersion" />
+                            <input type="hidden" name="isActive" value="@((!service.IsActive).ToString().ToLowerInvariant())" />
+                            <button type="submit" class="button-secondary" data-confirm-dialog="toggle-service-@service.Id">
+                                @(service.IsActive ? "Archive" : "Restore")
+                            </button>
+                        </form>
+                        <partial name="_ConfirmDialog" model='@(new ConfirmDialogViewModel
+                                 {
+                                     Id = $"toggle-service-{service.Id}",
+                                     Title = service.IsActive ? "Archive this service?" : "Restore this service?",
+                                     Message = service.IsActive
+                                                        ? "Clients can no longer book it. Existing bookings are kept."
+                                                        : "Clients can book it again.",
+                                     ConfirmText = service.IsActive ? "Archive" : "Restore"
+                                 })' />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

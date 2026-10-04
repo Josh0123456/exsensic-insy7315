@@ -1,0 +1,36 @@
+@model Exsensic.Web.Models.Journeys.JourneyPage
+@{
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var reloadUrl = action is "Confirm" or "Reject"
+        ? Url.Action("Details", new { id = ViewContext.RouteData.Values["id"] })
+        : Context.Request.Path + Context.Request.QueryString;
+}
+@if (!Model.IntegrationAvailable && Model.Problem is null && ViewData.ModelState.IsValid)
+{
+    <div class="feedback-message feedback-warning" role="status">
+        <strong>Not available yet</strong>
+        <p>This online service is not available yet. No request has been submitted. Please check back later.</p>
+    </div>
+}
+@if (Model.Problem is not null)
+{
+    <div class="feedback-message feedback-error" role="alert"
+         data-retry-seconds="@(Model.Problem.StatusCode == 429 ? Math.Max(0, Math.Ceiling((Model.Problem.RetryAfterDelay ?? (Model.Problem.RetryAfterUtc - DateTimeOffset.UtcNow) ?? TimeSpan.Zero).TotalSeconds)) : 0)">
+        <strong>We could not complete that request</strong>
+        @if (ViewData.ModelState.IsValid) { <p>@Model.Problem.Message</p> }
+        @if (Model.Problem.RetryAfterDelay is TimeSpan delay)
+        {
+            <p>Please wait at least @Math.Max(0, Math.Ceiling(delay.TotalSeconds)) seconds before trying again.</p>
+        }
+        @if (Model.Problem.RetryAfterUtc is DateTimeOffset retry)
+        {
+            <p>Please try again after @retry.ToOffset(TimeSpan.FromHours(2)).ToString("d MMM yyyy, HH:mm:ss") SAST.</p>
+        }
+        @if (Model.Problem.Code == ErrorCodes.ConcurrencyConflict)
+        {
+            <p>This page is out of date. Reload and review the latest booking before taking another action.</p>
+        }
+        <a href="@reloadUrl">Reload current page</a>
+    </div>
+}
+<div asp-validation-summary="All" class="validation-summary" role="alert" tabindex="-1" data-validation-summary></div>

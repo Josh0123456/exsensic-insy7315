@@ -1,0 +1,5 @@
+@model int
+@{ ViewData["Title"] = "Review booking"; }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Review the latest booking.", Eyebrow = "Action not completed", Subtitle = "The booking may have changed. Reload it before trying again." })' />
+<div asp-validation-summary="All" class="validation-summary" role="alert" tabindex="-1" data-validation-summary></div>
+<a class="button-primary" asp-action="Details" asp-route-id="@Model">Reload booking</a>

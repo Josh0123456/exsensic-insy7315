@@ -1,0 +1,17 @@
+# Who reviews what (CONTRIBUTING.md, team roles). Later lines win.
+# Web: Christopher
+src/Exsensic.Web/ @Christopher-Doyle
+# Web admin catalogue and users: Dean
+src/Exsensic.Web/Controllers/AdminServicesController.cs @SibleyDean
+src/Exsensic.Web/Controllers/AdminTimeSlotsController.cs @SibleyDean
+src/Exsensic.Web/Controllers/AdminUsersController.cs @SibleyDean
+# Web notifications: Daniel
+src/Exsensic.Web/Controllers/NotificationsController.cs @ST10446445
+# Core booking side: Daniel
+src/Exsensic.Core/Bookings/ @ST10446445
+# Data and Core entities: Dean
+src/Exsensic.Data/ @SibleyDean
+src/Exsensic.Core/Entities/ @SibleyDean
+# Workflows, hosting and README: Josh
+.github/ @Josh0123456
+README.md @Josh0123456
