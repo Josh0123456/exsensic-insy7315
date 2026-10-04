@@ -84,8 +84,11 @@ public abstract class E2ETestBase : IAsyncLifetime
         await page.GotoAsync("/Account/Login");
         await page.GetByLabel("Email address").FillAsync(Required(prefix + "_EMAIL"));
         await page.GetByLabel("Password").FillAsync(Required(prefix + "_PASSWORD"));
+        // Wait only until the server answers with the next page, not until every script and stylesheet has
+        // loaded; the following steps wait for exactly what they need.
         await page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).ClickAsync();
-        await page.WaitForURLAsync(url => !url.Contains("/Account/Login", StringComparison.OrdinalIgnoreCase));
+        await page.WaitForURLAsync(url => !url.Contains("/Account/Login", StringComparison.OrdinalIgnoreCase),
+            new() { WaitUntil = WaitUntilState.Commit });
         return page;
     }
 
@@ -141,7 +144,8 @@ public abstract class E2ETestBase : IAsyncLifetime
     }
 
     /// <summary>The status word shown by the status badge on a booking page.</summary>
-    protected static ILocator StatusBadge(IPage page) => page.Locator(".status-badge").First;
+    /// <remarks>Only inside the page's main content: the navigation's notification counter uses the same style.</remarks>
+    protected static ILocator StatusBadge(IPage page) => page.Locator("main .status-badge").First;
 
     private static string Required(string name) =>
         Environment.GetEnvironmentVariable(name) is { Length: > 0 } value
