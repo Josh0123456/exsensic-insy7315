@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Time slots";
+}
+<partial name="_PageHeader" model='@(new PageHeaderViewModel
+         {
+             Title = "Time slots",
+             Eyebrow = "Admin",
+             Subtitle = "Open the calendar for bookings."
+         })' />
+<partial name="_EmptyState" model='@(new EmptyStateViewModel
+         {
+             Title = "Time slot management",
+             Message = "The slot calendar is being wired to the API."
+         })' />

@@ -1,0 +1,16 @@
+# Web: Christopher
+src/Exsensic.Web/ @P1-Christopher-Doyle
+# Web admin catalogue/users: Dean
+src/Exsensic.Web/Controllers/AdminServicesController.cs @P3-SibleyDean
+src/Exsensic.Web/Controllers/AdminTimeSlotsController.cs @P3-SibleyDean
+src/Exsensic.Web/Controllers/AdminUsersController.cs @P3-SibleyDean
+# Web notifications: Daniel
+src/Exsensic.Web/Controllers/NotificationsController.cs @P2-ST10446445
+# Core booking side: Daniel
+src/Exsensic.Core/Bookings/ View ST10446445's full-sized avatar
+@P2-ST10446445
+# Data and Core entities: Dean
+src/Exsensic.Data/ @P3-SibleyDean
+src/Exsensic.Core/Entities/ @P3-SibleyDean
+# Workflows: Josh
+.github/workflows/ @P4-Josh0123456
