@@ -32,9 +32,16 @@ public abstract class E2ETestBase : IAsyncLifetime
     /// <summary>The deployed site under test, for example the staging web app.</summary>
     protected static string BaseUrl => Required("E2E_BASE_URL").TrimEnd('/');
 
+    /// <summary>
+    /// Staging runs on a small shared B1 plan and is tested minutes after a deploy restarts it, so the
+    /// first requests can be slow. These limits allow for that without hiding real failures.
+    /// </summary>
+    private const float ActionTimeoutMs = 60_000;
+
     /// <summary>Starts Playwright and a headless Chromium browser before each test.</summary>
     public async Task InitializeAsync()
     {
+        Assertions.SetDefaultExpectTimeout(30_000);
         _playwright = await Playwright.CreateAsync();
         _browser = await _playwright.Chromium.LaunchAsync(new() { Headless = true });
     }
@@ -61,6 +68,8 @@ public abstract class E2ETestBase : IAsyncLifetime
     protected async Task<IPage> NewSessionAsync(string label = "main", [CallerMemberName] string test = "")
     {
         var context = await _browser!.NewContextAsync(new() { BaseURL = BaseUrl });
+        context.SetDefaultTimeout(ActionTimeoutMs);
+        context.SetDefaultNavigationTimeout(ActionTimeoutMs);
         await context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true, Sources = false });
         _sessions.Add((context, $"{test}-{label}"));
         return await context.NewPageAsync();
