@@ -1,5 +1,107 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+@model Exsensic.Web.Models.AdminCatalog.AdminTimeSlotListViewModel
 @{
+    ViewData["Title"] = "Time slots";
+}
+
+<partial name="_PageHeader" model='@(new PageHeaderViewModel
+         {
+             Title = "Time slots",
+             Eyebrow = "Admin",
+             Subtitle = "Open the calendar for client bookings.",
+             ActionText = "Generate slots",
+             ActionUrl = Url.Action("Generate")
+         })' />
+
+<form method="get" class="filter-form" aria-label="Date range filter">
+    <div class="form-field">
+        <label for="from">From</label>
+        <input id="from" name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="form-field">
+        <label for="to">To</label>
+        <input id="to" name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")" />
+    </div>
+    <button type="submit" class="button-primary">Apply</button>
+</form>
+
+@if (!Model.IntegrationAvailable)
+{
+    <partial name="_EmptyState" model='@(new EmptyStateViewModel
+             {
+                 Title = "Slots are unavailable",
+                 Message = "The list could not be loaded. Please try again shortly."
+             })' />
+}
+else if (Model.Slots.Count == 0)
+{
+    <partial name="_EmptyState" model='@(new EmptyStateViewModel
+             {
+                 Title = "No slots in this range",
+                 Message = "Generate slots to open the calendar for bookings."
+             })' />
+}
+else
+{
+    <table class="booking-table">
+        <caption>Slots from @Model.From to @Model.To</caption>
+        <thead>
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Time</th>
+                <th scope="col">State</th>
+                <th scope="col">Reason</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var slot in Model.Slots)
+            {
+                var state = slot.HasActiveBooking ? "Booked" : slot.IsBlocked ? "Blocked" : "Open";
+                var canBlock = !slot.HasActiveBooking && !slot.IsBlocked;
+                var canDelete = !slot.HasActiveBooking;
+                <tr>
+                    <td>@slot.SlotDate.ToString("ddd d MMM yyyy")</td>
+                    <td>@slot.StartTime.ToString("HH:mm") – @slot.EndTime.ToString("HH:mm")</td>
+                    <td>@state</td>
+                    <td>@(slot.BlockReason ?? "—")</td>
+                    <td>
+                        @if (canBlock)
+                        {
+                            <form method="post" asp-action="Block" asp-route-id="@slot.Id" data-single-submit style="display:inline">
+                                <input type="hidden" name="rowVersion" value="@slot.RowVersion" />
+                                <input type="text" name="reason" placeholder="Reason" required maxlength="500" aria-label="Block reason" />
+                                <button type="submit" class="button-secondary" data-confirm-dialog="block-slot-@slot.Id">Block</button>
+                            </form>
+                            <partial name="_ConfirmDialog" model='@(new ConfirmDialogViewModel
+                                     {
+                                         Id = $"block-slot-{slot.Id}",
+                                         Title = "Block this slot?",
+                                         Message = "Clients can no longer book it.",
+                                         ConfirmText = "Block slot"
+                                     })' />
+                        }
+                        @if (slot.IsBlocked)
+                        {
+                            <form method="post" asp-action="Unblock" asp-route-id="@slot.Id" data-single-submit style="display:inline">
+                                <button type="submit" class="button-secondary">Unblock</button>
+                            </form>
+                        }
+                        @if (canDelete)
+                        {
+                            <form method="post" asp-action="Delete" asp-route-id="@slot.Id" data-single-submit style="display:inline">
+                                <button type="submit" class="button-secondary" data-confirm-dialog="delete-slot-@slot.Id">Delete</button>
+                            </form>
+                            <partial name="_ConfirmDialog" model='@(new ConfirmDialogViewModel
+                                     {
+                                         Id = $"delete-slot-{slot.Id}",
+                                         Title = "Delete this slot?",
+                                         Message = "This can't be undone.",
+                                         ConfirmText = "Delete slot"
+                                     })' />
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
