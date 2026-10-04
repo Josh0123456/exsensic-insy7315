@@ -38,6 +38,9 @@ public abstract class E2ETestBase : IAsyncLifetime
     /// </summary>
     private const float ActionTimeoutMs = 60_000;
 
+    /// <summary>Longer than the Web app's 75-second API timeout, so a cold first sign-in still completes.</summary>
+    private const float SignInTimeoutMs = 90_000;
+
     /// <summary>Starts Playwright and a headless Chromium browser before each test.</summary>
     public async Task InitializeAsync()
     {
@@ -96,10 +99,11 @@ public abstract class E2ETestBase : IAsyncLifetime
         await page.GetByLabel("Email address").FillAsync(Required(prefix + "_EMAIL"));
         await page.GetByLabel("Password").FillAsync(Required(prefix + "_PASSWORD"));
         // Wait only until the server answers with the next page, not until every script and stylesheet has
-        // loaded; the following steps wait for exactly what they need.
-        await page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).ClickAsync();
+        // loaded; the following steps wait for exactly what they need. The first sign-in after a deploy is the
+        // API's first password check and database call, so it may take up to the Web app's 75-second API timeout.
+        await page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).ClickAsync(new() { Timeout = SignInTimeoutMs });
         await page.WaitForURLAsync(url => !url.Contains("/Account/Login", StringComparison.OrdinalIgnoreCase),
-            new() { WaitUntil = WaitUntilState.Commit });
+            new() { WaitUntil = WaitUntilState.Commit, Timeout = SignInTimeoutMs });
         return page;
     }
 
