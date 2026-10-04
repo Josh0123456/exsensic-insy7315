@@ -1,0 +1,33 @@
+name: pr-checks
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled]
+    branches: [develop, main]
+
+jobs:
+  pr-checks:
+    if: "!contains(github.event.pull_request.labels.*.name, 'commit-format-exception')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check branch name
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          if [[ ! "$BRANCH" =~ ^(feat|fix|chore|docs|test|ci)/p[1-4]-[a-z0-9-]+$ ]] && [[ ! "$BRANCH" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Branch '$BRANCH' does not match the naming convention."
+            exit 1
+          fi
+      - name: Check commit messages
+        run: |
+          COMMITS=$(git log --format=%s origin/${{ github.base_ref }}..HEAD)
+          FAIL=0
+          while IFS= read -r msg; do
+            [ -z "$msg" ] && continue
+            if [[ ! "$msg" =~ ^(feat|fix|refactor|style|test|docs|ci|chore|perf)\([a-z]+\):\ .+ ]]; then
+              echo "Bad commit: $msg"
+              FAIL=1
+            fi
+          done <<< "$COMMITS"
+          exit $FAIL
