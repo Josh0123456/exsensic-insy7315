@@ -75,9 +75,20 @@ public abstract class E2ETestBase : IAsyncLifetime
         return await context.NewPageAsync();
     }
 
+    /// <summary>
+    /// The API allows 5 sign-ins per minute per visitor IP, and every test runs from the same runner IP.
+    /// Spacing sign-ins at least 13 seconds apart keeps the whole run under that limit (tests run one at a time).
+    /// </summary>
+    private static readonly TimeSpan SignInSpacing = TimeSpan.FromSeconds(13);
+    private static DateTime _lastSignIn = DateTime.MinValue;
+
     /// <summary>Opens a new session and signs in as the demo account for the role.</summary>
     protected async Task<IPage> SignedInAsync(Role role, [CallerMemberName] string test = "")
     {
+        var wait = _lastSignIn + SignInSpacing - DateTime.UtcNow;
+        if (wait > TimeSpan.Zero) await Task.Delay(wait);
+        _lastSignIn = DateTime.UtcNow;
+
         var page = await NewSessionAsync(role.ToString().ToLowerInvariant(), test);
         var prefix = "E2E_" + role.ToString().ToUpperInvariant();
 
