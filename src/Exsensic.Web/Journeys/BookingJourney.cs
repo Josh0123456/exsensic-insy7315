@@ -55,7 +55,7 @@ public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvid
         {
             Filter = filter,
             Page = page,
-            Bookings = matching.Skip((page - 1) * PageSize).Take(PageSize).Select(ToCard).ToList(),
+            Bookings = matching.Skip((page - 1) * PageSize).Take(PageSize).Select(b => ToCard(b)).ToList(),
             Pager = totalPages > 1 ? new PagerViewModel
             {
                 CurrentPage = page,
@@ -140,8 +140,11 @@ public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvid
         return result.Error;
     }
 
-    /// <summary>Maps an API booking to the shared detail model used by client, staff and admin screens.</summary>
-    internal async Task<BookingDetailViewModel> ToDetailAsync(BookingDetailDto d, CancellationToken cancellationToken)
+    /// <summary>
+    /// Maps an API booking to the shared detail model used by client, staff and admin screens.
+    /// <paramref name="detailsPath"/> is where booking links point, for example "/Admin/Bookings".
+    /// </summary>
+    internal async Task<BookingDetailViewModel> ToDetailAsync(BookingDetailDto d, CancellationToken cancellationToken, string detailsPath = "/Bookings")
     {
         // Show requirement answers under the labels the client saw on the form.
         var template = await api.SendAsync<RequirementTemplateDto>(
@@ -164,7 +167,7 @@ public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvid
                 EndTime = d.EndTime,
                 BookingStatus = d.Status.ToString(),
                 AssignedStaff = d.StaffName,
-                DetailsUrl = $"/Bookings/{d.Id}",
+                DetailsUrl = $"{detailsPath}/{d.Id}",
             },
             ClientCompany = d.ClientCompany,
             ContactSummary = string.Join(" · ", new[] { d.ClientName, d.ClientEmail, d.ClientPhone }.Where(p => !string.IsNullOrWhiteSpace(p))),
@@ -185,7 +188,8 @@ public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvid
         };
     }
 
-    private static BookingCardViewModel ToCard(BookingSummaryDto b) => new()
+    /// <summary>Maps a booking summary to the shared card; <paramref name="detailsPath"/> is where its link points.</summary>
+    internal static BookingCardViewModel ToCard(BookingSummaryDto b, string detailsPath = "/Bookings") => new()
     {
         Reference = b.Reference,
         ServiceName = b.ServiceName,
@@ -194,7 +198,7 @@ public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvid
         EndTime = b.EndTime,
         BookingStatus = b.Status.ToString(),
         AssignedStaff = b.StaffName,
-        DetailsUrl = $"/Bookings/{b.Id}",
+        DetailsUrl = $"{detailsPath}/{b.Id}",
     };
 
     /// <summary>Whether a slot (SAST date and time) has already started.</summary>
