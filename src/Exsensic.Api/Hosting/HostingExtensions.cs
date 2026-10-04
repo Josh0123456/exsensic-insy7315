@@ -62,6 +62,7 @@ public static class HostingExtensions
     public static WebApplication UseExsensicHosting(this WebApplication app)
     {
         app.UseForwardedHeaders();
+        AddSecurityHeaders(app);
 
         if (!app.Environment.IsDevelopment())
         {
@@ -108,4 +109,24 @@ public static class HostingExtensions
         app.Logger.LogInformation("Initialising the database (demo data: {SeedDemoData}).", seedDemoData);
         await DatabaseInitialiser.InitialiseAsync(app.Services, seedDemoData, app.Lifetime.ApplicationStopping);
     }
+
+    /// <summary>
+    /// Security headers on every API response (Dean's step 15, taken over by Josh). The API only returns
+    /// JSON, so the content policy allows nothing to load or run, and responses are never cached.
+    /// </summary>
+    private static void AddSecurityHeaders(WebApplication app) => app.Use((context, next) =>
+    {
+        context.Response.OnStarting(() =>
+        {
+            var headers = context.Response.Headers;
+            headers.ContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+            headers.XContentTypeOptions = "nosniff";
+            headers["Referrer-Policy"] = "no-referrer";
+            headers.XFrameOptions = "DENY";
+            headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+            headers.CacheControl = "no-store";
+            return Task.CompletedTask;
+        });
+        return next(context);
+    });
 }
