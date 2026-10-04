@@ -8,6 +8,9 @@
     <!-- Every project targets .NET 10; the SDK itself is pinned in global.json. -->
     <TargetFramework>net10.0</TargetFramework>
 
+    <!-- Release version (semantic versioning), stamped into every assembly. Matches the Git tag vX.Y.Z. -->
+    <Version>1.0.0</Version>
+
     <!-- Nullable reference types catch null bugs at compile time instead of at runtime. -->
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
