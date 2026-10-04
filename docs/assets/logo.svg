@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="160" viewBox="0 0 640 160" role="img" aria-labelledby="title">
+  <title id="title">Exsensic: Big ideas. Made visible.</title>
+  <!-- Colours from src/Exsensic.Web/wwwroot/css/tokens.css: surface-alt, brand, on-brand, ink, ink-muted -->
+  <rect width="640" height="160" rx="16" fill="#121511"/>
+  <rect x="40" y="44" width="72" height="72" rx="12" fill="#c4f455"/>
+  <text x="76" y="97" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="44" font-weight="700" fill="#121511">E</text>
+  <text x="136" y="86" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="44" font-weight="700" fill="#f5f6f2">Exsensic</text>
+  <text x="138" y="114" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" fill="#b5b9b1">Big ideas. Made visible.</text>
+</svg>

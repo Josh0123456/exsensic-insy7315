@@ -16,7 +16,7 @@ namespace Exsensic.Api.Errors;
 /// unexpected becomes 500 server_error with a generic message: the stack trace and details only go
 /// to the logs, never to the client.
 /// </remarks>
-// Adapted from [n]: Microsoft (2025) Handle errors in ASP.NET Core APIs. https://learn.microsoft.com/aspnet/core/fundamentals/error-handling-api
+// Adapted from [3]: Microsoft (2025) Handle errors in ASP.NET Core APIs. https://learn.microsoft.com/aspnet/core/fundamentals/error-handling-api
 public sealed class ProblemDetailsExceptionHandler : IExceptionHandler
 {
     /// <summary>The message sent for 404, so a missing record and someone else's record look the same.</summary>

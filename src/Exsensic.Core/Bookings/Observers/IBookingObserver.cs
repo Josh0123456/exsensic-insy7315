@@ -7,7 +7,7 @@ namespace Exsensic.Core.Bookings.Observers;
 /// The booking only records what happened; each observer decides what to do about it (write the
 /// status history, notify people), so a new reaction is a new observer and the booking never changes.
 /// </summary>
-// Adapted from [n]: Refactoring.Guru (n.d.) Observer. https://refactoring.guru/design-patterns/observer
+// Adapted from [2]: Refactoring.Guru (n.d.) Observer. https://refactoring.guru/design-patterns/observer
 public interface IBookingObserver
 {
     /// <summary>

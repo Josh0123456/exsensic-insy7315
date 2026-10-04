@@ -14,7 +14,7 @@ namespace Exsensic.Core.Bookings.States;
 /// booking and records the BookingStatusChanged event, so the status is changed in exactly one place.
 /// States hold no data, so one shared instance per status is enough.
 /// </remarks>
-// Adapted from [n]: Refactoring.Guru (n.d.) State. https://refactoring.guru/design-patterns/state
+// Adapted from [1]: Refactoring.Guru (n.d.) State. https://refactoring.guru/design-patterns/state
 public abstract class BookingState
 {
     /// <summary>The status this state represents.</summary>
