@@ -102,3 +102,41 @@ form legend { float: none; width: auto; font-size: var(--type-20); font-weight: 
     .filter-form > button, .filter-form > a { width: 100%; }
     .site-navigation .nav-link { width: 100%; }
 }
+
+/* Final accessibility and responsive pass: intrinsic widths must not widen the page. */
+*, *::before, *::after { box-sizing: border-box; }
+.site-main, .site-navigation .navbar-collapse, .navbar-nav, .form-grid > *,
+.booking-grid > *, .review-grid > *, .metric-grid > *, .card-heading > *,
+.component-actions > *, .booking-context > * { min-width: 0; }
+.site-main { overflow-wrap: anywhere; }
+img, svg, video { max-width: 100%; }
+input, select, textarea, button { max-width: 100%; }
+.button-primary, .button-secondary, .status-badge { overflow-wrap: anywhere; white-space: normal; }
+.form-field input[readonly] { color: var(--ink-muted); border-style: dashed; }
+.empty-state .empty-state-title { color: var(--ink); font-size: var(--type-20); font-weight: var(--weight-bold); }
+.validation-summary a { color: inherit; text-decoration: underline; display: inline-block; padding-block: var(--space-8); }
+[aria-busy="true"] button[type="submit"] { opacity: 0.75; cursor: progress; }
+.form-field:has(input[type="checkbox"]) label { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.wizard-progress a, .booking-context a, .feedback-message > a { display: inline-flex; align-items: center; min-height: 44px; }
+.slot-picker:focus, [data-validation-summary]:focus { outline: 3px solid var(--brand); outline-offset: 4px; }
+@media (max-width: 991.98px) {
+    .site-navigation > .page-container { flex-wrap: wrap; }
+    .site-navigation .navbar-collapse { flex-basis: 100%; }
+    .site-navigation .nav-link { width: 100%; }
+}
+@media (max-width: 575.98px) {
+    .page-container { width: calc(100% - var(--space-32)); }
+    .site-main { padding-block: var(--space-32) var(--space-48); }
+    h1 { font-size: clamp(var(--type-30), 9vw, var(--type-36)); }
+    h2 { font-size: var(--type-24); }
+    .slot-picker, .booking-card, .empty-state { padding: var(--space-16); }
+    .component-actions form, .component-actions form button { width: 100%; }
+    .slot-options > label { width: 100%; }
+    .marketing-hero, .marketing-section { padding-block: var(--space-48); }
+    .confirm-dialog { padding: var(--space-16); }
+    .confirm-dialog .component-actions > button { flex-basis: 100%; }
+}
+@media (forced-colors: active) {
+    :focus-visible { outline: 3px solid Highlight; }
+    .status-badge, .date-choice[aria-pressed="true"], .slot-choice:has(input:checked) { border: 2px solid ButtonText; }
+}

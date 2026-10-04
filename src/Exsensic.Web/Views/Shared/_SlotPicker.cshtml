@@ -1,9 +1,10 @@
 @model SlotPickerViewModel
 @{
+    var invalid = ViewData.ModelState.TryGetValue(Model.InputName, out var state) && state.Errors.Count > 0;
     var selectedDate = Model.Dates.FirstOrDefault(day => day.Date == Model.SelectedDate && day.IsAvailable)
         ?? Model.Dates.FirstOrDefault(day => day.IsAvailable);
 }
-<div id="@Model.Id" class="slot-picker" data-slot-picker>
+<div id="@Model.InputName" tabindex="-1" class="slot-picker" data-slot-picker>
     <p id="@(Model.Id)-timezone" class="text-muted-ui">Times shown in @Model.TimeZoneLabel.</p>
     @if (Model.IsDisabled)
     {
@@ -45,7 +46,7 @@
             var isSelected = day == selectedDate;
             <fieldset id="@(Model.Id)-day-@index" class="slot-panel" data-slot-panel
                       hidden="@(!isSelected)" disabled="@(Model.IsDisabled || !isSelected)"
-                      aria-describedby="@(Model.Id)-timezone">
+                      aria-describedby="@(Model.Id)-timezone @(Model.InputName)-error">
                 <legend>Choose a time for @day.Date.ToString("d MMMM yyyy")</legend>
                 @if (day.Slots.Count == 0 || !day.Slots.Any(slot => slot.IsAvailable))
                 {
@@ -58,6 +59,7 @@
                         var inputId = $"{Model.Id}-day-{index}-slot-{slotIndex}";
                         <label class="slot-choice" for="@inputId">
                             <input id="@inputId" type="radio" name="@Model.InputName" value="@slot.Id"
+                                   required aria-required="true" aria-invalid="@invalid.ToString().ToLowerInvariant()" aria-describedby="@(Model.InputName)-error"
                                    checked="@(isSelected && slot.IsAvailable && slot.Id == Model.SelectedSlotId)"
                                    disabled="@(!slot.IsAvailable)" />
                             <span>

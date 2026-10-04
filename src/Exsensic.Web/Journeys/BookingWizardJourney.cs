@@ -1,3 +1,4 @@
+using Exsensic.Contracts.Common;
 using System.Globalization;
 using Exsensic.Contracts.Auth;
 using Exsensic.Contracts.Bookings;
@@ -14,7 +15,7 @@ namespace Exsensic.Web.Journeys;
 /// service, the service category's requirement form, and POST /api/v1/bookings. The API decides
 /// availability and validates the requirements; this class only shapes the screens.
 /// </summary>
-public sealed class BookingWizardJourney(ApiClient api, JourneyClock clock) : IBookingWizardJourney
+public sealed class BookingWizardJourney(ApiClient api, IBookingsApi bookings, IAuthApi auth, JourneyClock clock) : IBookingWizardJourney
 {
     /// <summary>The longest look-ahead the API allows for availability (ServiceCatalogService.MaxAvailabilityDays).</summary>
     private const int MaxLookAheadDays = 60;
@@ -50,8 +51,7 @@ public sealed class BookingWizardJourney(ApiClient api, JourneyClock clock) : IB
         var service = await api.SendAsync<ServiceDto>(HttpMethod.Get, $"api/v1/services/{serviceId}", cancellationToken);
         if (service.Value is null) return Fail<RequirementsStepViewModel>(service.StatusCode, service.Error);
 
-        var template = await api.SendAsync<RequirementTemplateDto>(
-            HttpMethod.Get, $"api/v1/services/{serviceId}/requirement-template", cancellationToken);
+        var template = await bookings.TemplateAsync(serviceId, cancellationToken);
         if (template.Value is null) return Fail<RequirementsStepViewModel>(template.StatusCode, template.Error);
 
         var slots = await api.AvailabilityAsync(serviceId, clock.Today, clock.Today.AddDays(MaxLookAheadDays - 1), cancellationToken);
@@ -63,12 +63,12 @@ public sealed class BookingWizardJourney(ApiClient api, JourneyClock clock) : IB
             return new ApiResult<RequirementsStepViewModel>(409, default, false, new ApiProblem
             {
                 StatusCode = 409,
-                Code = "slot_unavailable",
+                Code = ErrorCodes.SlotUnavailable,
                 Message = "That time is no longer available. Please choose another time.",
             });
         }
 
-        var profile = await api.SendAsync<ProfileDto>(HttpMethod.Get, "api/v1/me", cancellationToken);
+        var profile = await auth.ProfileAsync(cancellationToken);
         if (profile.Value is null) return Fail<RequirementsStepViewModel>(profile.StatusCode, profile.Error);
 
         var model = new RequirementsStepViewModel
@@ -109,8 +109,7 @@ public sealed class BookingWizardJourney(ApiClient api, JourneyClock clock) : IB
             .Where(pair => keys.Contains(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
             .ToDictionary(pair => pair.Key, pair => pair.Value.Trim());
 
-        var result = await api.SendJsonAsync<CreateBookingRequest, BookingCreatedDto>(
-            HttpMethod.Post, "api/v1/bookings", new CreateBookingRequest(form.ServiceId, timeSlotId, requirements), cancellationToken);
+        var result = await bookings.CreateAsync(new CreateBookingRequest(form.ServiceId, timeSlotId, requirements), cancellationToken);
 
         return result.Value is { } created
             ? new ApiResult<int>(result.StatusCode, created.Id, true, null)

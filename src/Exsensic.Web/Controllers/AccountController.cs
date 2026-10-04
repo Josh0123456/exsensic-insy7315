@@ -1,3 +1,4 @@
+using Exsensic.Contracts.Auth;
 using Exsensic.Web.ApiClients;
 using Exsensic.Web.Journeys;
 using Exsensic.Web.Models.Account;
@@ -9,17 +10,22 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Exsensic.Web.Controllers;
 
-/// <summary>Account screens backed by an optional real-auth adapter; never synthesizes a session.</summary>
-/// <param name="journey">Registered only when P3's authentication contracts exist.</param>
+/// <summary>Account screens backed by the registered real-auth adapter; never synthesizes a session.</summary>
+/// <param name="journey">Maps the merged authentication contracts to account screens.</param>
 [Route("Account")]
-public sealed class AccountController(IAccountJourney? journey = null) : JourneyController
+public sealed class AccountController(IAccountJourney journey) : JourneyController
 {
     /// <summary>Shows sign-in and retains only a local return destination.</summary>
     [AllowAnonymous, HttpGet("Login")]
-    public IActionResult Login(string? returnUrl) => View(new LoginViewModel
+    public IActionResult Login(string? returnUrl)
     {
-        ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null, IntegrationAvailable = journey is not null
-    });
+        // MVC inputs prefer ModelState values over the model: discard the untrusted query value too.
+        ModelState.Remove(nameof(returnUrl));
+        return View(new LoginViewModel
+        {
+            ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null, IntegrationAvailable = true
+        });
+    }
 
     /// <summary>Signs in only through the real account adapter.</summary>
     [AllowAnonymous, HttpPost("Login")]
@@ -27,9 +33,8 @@ public sealed class AccountController(IAccountJourney? journey = null) : Journey
     {
         model.ReturnUrl = Url.IsLocalUrl(model.ReturnUrl) ? model.ReturnUrl : null;
         ModelState.Remove(nameof(model.ReturnUrl));
-        model.IntegrationAvailable = journey is not null;
-        if (journey is null) IntegrationError();
-        if (ModelState.IsValid && journey is not null)
+        model.IntegrationAvailable = true;
+        if (ModelState.IsValid)
         {
             var problem = await journey.LoginAsync(model, cancellationToken);
             if (problem is null) return SignedInDestination(model.ReturnUrl);
@@ -45,15 +50,14 @@ public sealed class AccountController(IAccountJourney? journey = null) : Journey
 
     /// <summary>Shows public Client registration without role selection.</summary>
     [AllowAnonymous, HttpGet("Register")]
-    public IActionResult Register() => View(new RegisterViewModel { IntegrationAvailable = journey is not null });
+    public IActionResult Register() => View(new RegisterViewModel { IntegrationAvailable = true });
 
-    /// <summary>Registers through the real API; a missing dependency cannot produce success.</summary>
+    /// <summary>Registers through the real API.</summary>
     [AllowAnonymous, HttpPost("Register")]
     public async Task<IActionResult> Register(RegisterViewModel model, CancellationToken cancellationToken)
     {
-        model.IntegrationAvailable = journey is not null;
-        if (journey is null) IntegrationError();
-        if (ModelState.IsValid && journey is not null)
+        model.IntegrationAvailable = true;
+        if (ModelState.IsValid)
         {
             var problem = await journey.RegisterAsync(model, cancellationToken);
             if (problem is null) return SignedInDestination(null);
@@ -69,34 +73,31 @@ public sealed class AccountController(IAccountJourney? journey = null) : Journey
     /// <summary>Loads the current user's real profile without exposing token data.</summary>
     [Authorize, HttpGet("Profile")]
     public async Task<IActionResult> Profile(CancellationToken cancellationToken) =>
-        journey is null ? Unavailable("Profile", new ProfileViewModel())
-        : await RenderAsync("Profile", await journey.GetProfileAsync(cancellationToken), new ProfileViewModel(), cancellationToken);
+        await RenderAsync("Profile", await journey.GetProfileAsync(cancellationToken), new ProfileViewModel(), cancellationToken);
 
     /// <summary>Saves editable profile fields through the real adapter.</summary>
     [Authorize, HttpPost("Profile")]
     public async Task<IActionResult> Profile(ProfileViewModel model, CancellationToken cancellationToken)
     {
-        model.IntegrationAvailable = journey is not null;
-        if (journey is null) IntegrationError();
-        if (journey is not null)
+        model.IntegrationAvailable = true;
+        var current = await journey.GetProfileAsync(cancellationToken);
+        if (!current.IsSuccess || current.Value is null)
+            return await RenderAsync("Profile", current, model, cancellationToken);
+        model.Email = current.Value.Email;
+        ModelState.Remove(nameof(model.Email));
+        model.ShowCompany = current.Value.ShowCompany;
+        if (!model.ShowCompany) model.CompanyName = null;
+        if (ModelState.IsValid)
         {
-            var current = await journey.GetProfileAsync(cancellationToken);
-            if (!current.IsSuccess || current.Value is null)
-                return await RenderAsync("Profile", current, model, cancellationToken);
-            model.ShowCompany = current.Value.ShowCompany;
-            if (!model.ShowCompany) model.CompanyName = null;
-            if (ModelState.IsValid)
+            var problem = await journey.SaveProfileAsync(model, cancellationToken);
+            if (problem is null)
             {
-                var problem = await journey.SaveProfileAsync(model, cancellationToken);
-                if (problem is null)
-                {
-                    TempData[ToastKeys.Success] = "Your profile has been updated.";
-                    return RedirectToAction(nameof(Profile));
-                }
-                var special = await HandleProblemAsync(problem, cancellationToken);
-                if (special is not null) return special;
-                model.Problem = problem;
+                TempData[ToastKeys.Success] = "Your profile has been updated.";
+                return RedirectToAction(nameof(Profile));
             }
+            var special = await HandleProblemAsync(problem, cancellationToken);
+            if (special is not null) return special;
+            model.Problem = problem;
         }
         return View(model);
     }
@@ -121,8 +122,8 @@ public sealed class AccountController(IAccountJourney? journey = null) : Journey
     private IActionResult SignedInDestination(string? returnUrl)
     {
         if (Url.IsLocalUrl(returnUrl)) return LocalRedirect(returnUrl!);
-        if (User.IsInRole("Admin")) return RedirectToAction("Index", "Admin");
-        if (User.IsInRole("Staff")) return RedirectToAction("Index", "Staff");
+        if (User.IsInRole(RoleNames.Admin)) return RedirectToAction("Index", "Admin");
+        if (User.IsInRole(RoleNames.Staff)) return RedirectToAction("Index", "Staff");
         return RedirectToAction("Index", "Services");
     }
 }

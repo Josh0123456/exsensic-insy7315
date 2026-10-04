@@ -14,7 +14,7 @@ namespace Exsensic.Web.Journeys;
 /// details and confirmation, reschedule and cancel. The API decides every rule (ownership, cut-off,
 /// availability, concurrency); the Can* flags only decide which buttons to show.
 /// </summary>
-public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvider timeProvider) : IBookingJourney
+public sealed class BookingJourney(ApiClient api, IBookingsApi bookings, JourneyClock clock, TimeProvider timeProvider) : IBookingJourney
 {
     private const int PageSize = 10;
 
@@ -30,8 +30,7 @@ public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvid
         var all = new List<BookingSummaryDto>();
         for (var apiPage = 1; ; apiPage++)
         {
-            var result = await api.SendAsync<PagedResult<BookingSummaryDto>>(
-                HttpMethod.Get, $"api/v1/bookings/mine?page={apiPage}&pageSize=100", cancellationToken);
+            var result = await bookings.MineAsync(apiPage, 100, cancellationToken);
             if (result.Value is not { } paged) return new(result.StatusCode, default, false, result.Error);
             all.AddRange(paged.Items);
             if (apiPage >= paged.TotalPages) break;
@@ -72,7 +71,7 @@ public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvid
     /// <summary>Details, requirements (with their form labels) and the status timeline; 404 if not yours.</summary>
     public async Task<ApiResult<BookingDetailViewModel>> DetailAsync(int id, CancellationToken cancellationToken)
     {
-        var result = await api.SendAsync<BookingDetailDto>(HttpMethod.Get, $"api/v1/bookings/{id}", cancellationToken);
+        var result = await bookings.DetailAsync(id, cancellationToken);
         if (result.Value is not { } detail) return new(result.StatusCode, default, false, result.Error);
 
         return new(result.StatusCode, await ToDetailAsync(detail, cancellationToken), true, null);
@@ -126,7 +125,7 @@ public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvid
             return new ApiProblem { StatusCode = 400, Message = "Choose an available time." };
         }
 
-        var result = await api.SendJsonNoContentAsync(HttpMethod.Put, $"api/v1/bookings/{id}/reschedule",
+        var result = await bookings.RescheduleAsync(id,
             new RescheduleBookingRequest(slotId, form.RowVersion), cancellationToken);
         return result.Error;
     }
@@ -135,7 +134,7 @@ public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvid
     public async Task<ApiProblem?> CancelAsync(int id, CancelViewModel form, CancellationToken cancellationToken)
     {
         var reason = string.IsNullOrWhiteSpace(form.Reason) ? null : form.Reason.Trim();
-        var result = await api.SendJsonNoContentAsync(HttpMethod.Put, $"api/v1/bookings/{id}/cancel",
+        var result = await bookings.CancelAsync(id,
             new CancelBookingRequest(reason, form.RowVersion), cancellationToken);
         return result.Error;
     }
@@ -147,8 +146,7 @@ public sealed class BookingJourney(ApiClient api, JourneyClock clock, TimeProvid
     internal async Task<BookingDetailViewModel> ToDetailAsync(BookingDetailDto d, CancellationToken cancellationToken, string detailsPath = "/Bookings")
     {
         // Show requirement answers under the labels the client saw on the form.
-        var template = await api.SendAsync<RequirementTemplateDto>(
-            HttpMethod.Get, $"api/v1/services/{d.ServiceId}/requirement-template", cancellationToken);
+        var template = await bookings.TemplateAsync(d.ServiceId, cancellationToken);
         var labels = template.Value?.Fields.ToDictionary(f => f.Key, f => f.Label) ?? [];
 
         var active = d.Status is BookingStatus.Requested or BookingStatus.Confirmed;

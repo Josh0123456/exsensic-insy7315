@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Hosting (Josh): telemetry, proxy headers, health checks, Kestrel settings.
 builder.Services.AddExsensicHosting(builder.Configuration);
 
-// Web security shell. Account screens and sign-in are implemented in Step 4.
+// MVC forms use antiforgery validation and secure cookie sessions.
 builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 builder.Services.AddAntiforgery(options =>
@@ -37,7 +37,11 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<JourneyClock>();
 builder.Services.AddScoped<AccountSession>();
-// Journey adapters connect the screens to the API; a screen shows "not available yet" until its adapter is registered.
+builder.Services.AddScoped<IAuthApi, AuthApi>();
+builder.Services.AddScoped<IBookingsApi, BookingsApi>();
+builder.Services.AddScoped<IStaffApi, StaffApi>();
+builder.Services.AddScoped<IAdminBookingsApi, AdminBookingsApi>();
+// Journey adapters map shared API DTOs to screen models; no persisted state is created in Web.
 builder.Services.AddScoped<IAccountJourney, AccountJourney>();
 builder.Services.AddScoped<ICatalogJourney, CatalogJourney>();
 builder.Services.AddScoped<IBookingWizardJourney, BookingWizardJourney>();
@@ -93,10 +97,10 @@ var app = builder.Build();
 app.UseExsensicHosting();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-}
+// Browser-facing failures stay generic in every environment; diagnostics belong in logs.
+app.UseExceptionHandler("/Error");
+
+app.UseStatusCodePagesWithReExecute("/Status/{0}");
 
 app.UseRouting();
 

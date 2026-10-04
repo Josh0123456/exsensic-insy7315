@@ -1,5 +1,6 @@
 using Exsensic.Web.ApiClients;
 using Exsensic.Web.Models.Journeys;
+using Exsensic.Web.Models.Shared;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -10,13 +11,6 @@ namespace Exsensic.Web.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public abstract class JourneyController : Controller
 {
-    /// <summary>Returns an honest unavailable page when the real presentation adapter has not been merged.</summary>
-    protected IActionResult Unavailable<T>(string view, T page) where T : JourneyPage
-    {
-        page.IntegrationAvailable = false;
-        return View(view, page);
-    }
-
     /// <summary>Renders only real successful data, with safe handling for failed reads.</summary>
     protected async Task<IActionResult> RenderAsync<T>(string view, ApiResult<T> result, T fallback,
         CancellationToken cancellationToken) where T : JourneyPage
@@ -42,7 +36,8 @@ public abstract class JourneyController : Controller
         if (problem.StatusCode == 401)
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            var returnUrl = HttpMethods.IsGet(Request.Method) ? Request.Path.Value
+            TempData[ToastKeys.Error] = "Your session has expired. Please sign in again.";
+            var returnUrl = HttpMethods.IsGet(Request.Method) ? Request.Path.Value + Request.QueryString.Value
                 : Url.Action("Index", RouteData.Values["controller"]?.ToString());
             return RedirectToAction("Login", "Account", new { returnUrl });
         }
@@ -56,7 +51,4 @@ public abstract class JourneyController : Controller
         return null;
     }
 
-    /// <summary>Validation feedback when submission is unavailable; never reports success.</summary>
-    protected void IntegrationError() =>
-        ModelState.AddModelError(string.Empty, "This service is not available yet. Your request has not been submitted.");
 }

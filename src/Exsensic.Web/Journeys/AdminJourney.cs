@@ -15,7 +15,7 @@ namespace Exsensic.Web.Journeys;
 /// list, and reviewing a request (confirm with a qualified, free staff member, or reject with a reason).
 /// The API decides which staff qualify and enforces every rule.
 /// </summary>
-public sealed class AdminJourney(ApiClient api, BookingJourney bookings) : IAdminJourney
+public sealed class AdminJourney(IAdminBookingsApi api, IBookingsApi bookingApi, BookingJourney bookings) : IAdminJourney
 {
     private const string AdminBookings = "/Admin/Bookings";
     private const int PageSize = 20;
@@ -23,11 +23,10 @@ public sealed class AdminJourney(ApiClient api, BookingJourney bookings) : IAdmi
     /// <summary>Status counts, the approval queue (oldest first), today's and the next 7 days' bookings.</summary>
     public async Task<ApiResult<AdminDashboardViewModel>> DashboardAsync(CancellationToken cancellationToken)
     {
-        var dashboard = await api.SendAsync<DashboardDto>(HttpMethod.Get, "api/v1/admin/dashboard", cancellationToken);
+        var dashboard = await api.DashboardAsync(cancellationToken);
         if (dashboard.Value is not { } d) return new(dashboard.StatusCode, default, false, dashboard.Error);
 
-        var waiting = await api.SendAsync<PagedResult<BookingSummaryDto>>(
-            HttpMethod.Get, "api/v1/admin/bookings?status=Requested&page=1&pageSize=10", cancellationToken);
+        var waiting = await api.ListAsync(BookingStatus.Requested.ToString(), null, null, 1, 10, cancellationToken);
         if (waiting.Value is null) return new(waiting.StatusCode, default, false, waiting.Error);
 
         var model = new AdminDashboardViewModel
@@ -46,8 +45,7 @@ public sealed class AdminJourney(ApiClient api, BookingJourney bookings) : IAdmi
     public async Task<ApiResult<AdminBookingListViewModel>> ListAsync(string? status, DateOnly? from, DateOnly? to, int page, CancellationToken cancellationToken)
     {
         var filter = Query(status, from, to);
-        var result = await api.SendAsync<PagedResult<BookingSummaryDto>>(
-            HttpMethod.Get, $"api/v1/admin/bookings?page={page}&pageSize={PageSize}{filter}", cancellationToken);
+        var result = await api.ListAsync(status, from, to, page, PageSize, cancellationToken);
         if (result.Value is not { } paged) return new(result.StatusCode, default, false, result.Error);
 
         var totalPages = Math.Max(1, paged.TotalPages);
@@ -78,7 +76,7 @@ public sealed class AdminJourney(ApiClient api, BookingJourney bookings) : IAdmi
     /// <summary>The booking with its requirements and history, plus the staff the API says are qualified and free.</summary>
     public async Task<ApiResult<AdminReviewViewModel>> ReviewAsync(int id, CancellationToken cancellationToken)
     {
-        var result = await api.SendAsync<BookingDetailDto>(HttpMethod.Get, $"api/v1/bookings/{id}", cancellationToken);
+        var result = await bookingApi.DetailAsync(id, cancellationToken);
         if (result.Value is not { } booking) return new(result.StatusCode, default, false, result.Error);
 
         var detail = await bookings.ToDetailAsync(booking, cancellationToken, AdminBookings);
@@ -90,8 +88,7 @@ public sealed class AdminJourney(ApiClient api, BookingJourney bookings) : IAdmi
         IReadOnlyList<SelectListItem> staffOptions = [];
         if (detail.CanReview)
         {
-            var staff = await api.SendAsync<List<StaffOptionDto>>(HttpMethod.Get,
-                $"api/v1/admin/staff?serviceId={booking.ServiceId}&timeSlotId={booking.TimeSlotId}", cancellationToken);
+            var staff = await api.StaffAsync(booking.ServiceId, booking.TimeSlotId, cancellationToken);
             if (staff.Value is null) return new(staff.StatusCode, default, false, staff.Error);
             staffOptions = staff.Value
                 .Select(s => new SelectListItem($"{s.FullName} — {s.JobTitle}", s.UserId.ToString()))
@@ -118,7 +115,7 @@ public sealed class AdminJourney(ApiClient api, BookingJourney bookings) : IAdmi
             return new ApiProblem { StatusCode = 400, Message = "Choose an available staff member." };
         }
 
-        var result = await api.SendJsonNoContentAsync(HttpMethod.Put, $"api/v1/admin/bookings/{id}/confirm",
+        var result = await api.ConfirmAsync(id,
             new ConfirmBookingRequest(staffUserId, form.RowVersion), cancellationToken);
         return result.Error;
     }
@@ -126,7 +123,7 @@ public sealed class AdminJourney(ApiClient api, BookingJourney bookings) : IAdmi
     /// <summary>PUT /api/v1/admin/bookings/{id}/reject with the reason; null on success.</summary>
     public async Task<ApiProblem?> RejectAsync(int id, RejectBookingViewModel form, CancellationToken cancellationToken)
     {
-        var result = await api.SendJsonNoContentAsync(HttpMethod.Put, $"api/v1/admin/bookings/{id}/reject",
+        var result = await api.RejectAsync(id,
             new RejectBookingRequest(form.Reason.Trim(), form.RowVersion), cancellationToken);
         return result.Error;
     }

@@ -16,7 +16,7 @@
 }
 <form asp-action="Reschedule" asp-route-id="@Model.Id" method="post" data-single-submit>
     <input asp-for="RowVersion" type="hidden" /><input asp-for="From" type="hidden" />
-    <fieldset disabled="@(!Model.IntegrationAvailable || Model.Problem?.Code == "concurrency_conflict")">
+    <fieldset disabled="@(!Model.IntegrationAvailable || Model.Problem?.Code == ErrorCodes.ConcurrencyConflict)">
         <legend>Choose a new time for the same service</legend>
         @if (Model.Picker is not null) { <partial name="_SlotPicker" model="Model.Picker" /> }
         <span asp-validation-for="NewTimeSlotId" id="NewTimeSlotId-error" class="field-error"></span>

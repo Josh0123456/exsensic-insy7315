@@ -5,7 +5,7 @@
         ? Url.Action("Details", new { id = ViewContext.RouteData.Values["id"] })
         : Context.Request.Path + Context.Request.QueryString;
 }
-@if (!Model.IntegrationAvailable && Model.Problem is null)
+@if (!Model.IntegrationAvailable && Model.Problem is null && ViewData.ModelState.IsValid)
 {
     <div class="feedback-message feedback-warning" role="status">
         <strong>Not available yet</strong>
@@ -14,7 +14,8 @@
 }
 @if (Model.Problem is not null)
 {
-    <div class="feedback-message feedback-error" role="alert">
+    <div class="feedback-message feedback-error" role="alert"
+         data-retry-seconds="@(Model.Problem.StatusCode == 429 ? Math.Max(0, Math.Ceiling((Model.Problem.RetryAfterDelay ?? (Model.Problem.RetryAfterUtc - DateTimeOffset.UtcNow) ?? TimeSpan.Zero).TotalSeconds)) : 0)">
         <strong>We could not complete that request</strong>
         @if (ViewData.ModelState.IsValid) { <p>@Model.Problem.Message</p> }
         @if (Model.Problem.RetryAfterDelay is TimeSpan delay)
@@ -25,7 +26,7 @@
         {
             <p>Please try again after @retry.ToOffset(TimeSpan.FromHours(2)).ToString("d MMM yyyy, HH:mm:ss") SAST.</p>
         }
-        @if (Model.Problem.Code == "concurrency_conflict")
+        @if (Model.Problem.Code == ErrorCodes.ConcurrencyConflict)
         {
             <p>This page is out of date. Reload and review the latest booking before taking another action.</p>
         }

@@ -5,9 +5,9 @@
     {
         ("Home", "Index", "Home"), ("Services", "Index", "Services")
     };
-    if (User.IsInRole("Client")) links.Add(("Bookings", "Index", "My bookings"));
-    if (User.IsInRole("Staff")) links.Add(("Staff", "Index", "My schedule"));
-    if (User.IsInRole("Admin")) links.Add(("Admin", "Index", "Admin"));
+    if (User.IsInRole(RoleNames.Client)) links.Add(("Bookings", "Index", "My bookings"));
+    if (User.IsInRole(RoleNames.Staff)) links.Add(("Staff", "Index", "My schedule"));
+    if (User.IsInRole(RoleNames.Admin)) links.Add(("Admin", "Index", "Admin"));
     links.Add(("Home", "Privacy", "Privacy"));
     if (User.Identity?.IsAuthenticated == true) links.Add(("Account", "Profile", "Profile"));
     else
@@ -19,7 +19,7 @@
 <nav class="navbar navbar-expand-lg site-navigation" aria-label="Main navigation">
     <div class="page-container">
         <a class="site-brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="Exsensic home">
-            <span class="brand-mark" aria-hidden="true">E</span> Exsensic
+            <span class="brand-mark" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M5 3h15v4H9v3h9v4H9v3h11v4H5z" /></svg></span> Exsensic
         </a>
         <button class="navbar-toggler navigation-toggle" type="button"
                 data-bs-toggle="collapse" data-bs-target="#primary-navigation"

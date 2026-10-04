@@ -17,7 +17,7 @@ public sealed class ProfileViewModel : JourneyPage
     public string? CompanyName { get; set; }
 
     /// <summary>Email for the Web presentation.</summary>
-    [Required, EmailAddress, Display(Name = "Email address")]
+    [BindNever, Display(Name = "Email address")]
     public string Email { get; set; } = "";
 
     /// <summary>Phone for the Web presentation.</summary>

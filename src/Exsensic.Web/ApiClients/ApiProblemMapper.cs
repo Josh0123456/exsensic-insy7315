@@ -1,3 +1,4 @@
+using Exsensic.Contracts.Common;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -97,8 +98,7 @@ public sealed class ApiProblemMapper
 
     private static string FriendlyMessage(int status, string? code)
     {
-        // ErrorCodes has not been merged into Contracts. These are the exact documented wire values,
-        // not a duplicate constants class. Replace literals with shared constants once available.
+        // Shared constants keep the UI aligned with the merged API error contract.
         return (status, code) switch
         {
             (>= 500, _) => "Something went wrong with the service. Please try again later.",
@@ -106,14 +106,14 @@ public sealed class ApiProblemMapper
             (403, _) => "You do not have permission to do that.",
             (404, _) => "The requested item could not be found.",
             (429, _) => "Too many requests. Please wait before trying again.",
-            (400, "validation_failed") => "Please check the highlighted fields and try again.",
-            (409, "slot_unavailable") => "That time slot is no longer available. Please choose another.",
-            (409, "invalid_transition") => "That action is no longer available for this booking. Please refresh the page.",
-            (409, "concurrency_conflict") => "Someone else changed this record. Please refresh and review it before trying again.",
-            (409, "staff_unavailable") => "That staff member is unavailable. Please choose another.",
-            (409, "slot_has_booking") => "This time slot has an active booking and cannot be changed that way.",
-            (409, "duplicate") => "An item with those details already exists. Please check your entries.",
-            (409, "cancel_window_closed") => "The cancellation deadline has passed. Please contact the team for help.",
+            (400, ErrorCodes.ValidationFailed) => "Please check the highlighted fields and try again.",
+            (409, ErrorCodes.SlotUnavailable) => "That time slot is no longer available. Please choose another.",
+            (409, ErrorCodes.InvalidTransition) => "That action is no longer available for this booking. Please refresh the page.",
+            (409, ErrorCodes.ConcurrencyConflict) => "Someone else changed this record. Please refresh and review it before trying again.",
+            (409, ErrorCodes.StaffUnavailable) => "That staff member is unavailable. Please choose another.",
+            (409, ErrorCodes.SlotHasBooking) => "This time slot has an active booking and cannot be changed that way.",
+            (409, ErrorCodes.Duplicate) => "An item with those details already exists. Please check your entries.",
+            (409, ErrorCodes.CancelWindowClosed) => "The cancellation deadline has passed. Please contact the team for help.",
             (400, _) => "Please check your entries and try again.",
             (409, _) => "The record has changed or the action is unavailable. Please refresh and try again.",
             _ => "We could not complete your request. Please try again."

@@ -1,7 +1,7 @@
 @model EmptyStateViewModel
 <div class="empty-state">
     <span class="empty-state-mark" aria-hidden="true">—</span>
-    <h3>@Model.Title</h3>
+    <p class="empty-state-title">@Model.Title</p>
     <p>@Model.Message</p>
     @if (!string.IsNullOrWhiteSpace(Model.ActionText) && Url.IsLocalUrl(Model.ActionUrl))
     {

@@ -21,8 +21,18 @@ public class HomeController : Controller
         return View();
     }
 
+    /// <summary>Renders a safe branded response for otherwise empty HTTP errors.</summary>
+    [Route("/Status/{statusCode:int}"), IgnoreAntiforgeryToken]
+    public IActionResult StatusPage(int statusCode)
+    {
+        Response.StatusCode = statusCode is >= 400 and <= 599 ? statusCode : 404;
+        return Response.StatusCode == 404
+            ? View("~/Views/Shared/NotFound.cshtml")
+            : View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });
+    }
+
     /// <summary>Displays a generic error and correlation identifier without exception details.</summary>
-    [Route("/Error")]
+    [Route("/Error"), IgnoreAntiforgeryToken]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {

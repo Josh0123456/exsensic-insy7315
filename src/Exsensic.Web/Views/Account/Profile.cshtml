@@ -18,8 +18,9 @@
                     <span asp-validation-for="CompanyName" id="CompanyName-error" class="field-error"></span>
 </div> }
                 <div class="form-field">
-                    <label asp-for="Email">Email address (required)</label>
-                    <input asp-for="Email" type="email" autocomplete="email" aria-describedby="Email-error" />
+                    <label asp-for="Email">Email address</label>
+                    <input asp-for="Email" type="email" autocomplete="email" readonly aria-describedby="Email-hint Email-error" />
+                    <p id="Email-hint" class="field-hint">Your sign-in email cannot be changed here.</p>
                     <span asp-validation-for="Email" id="Email-error" class="field-error"></span>
 </div>
                 <div class="form-field">

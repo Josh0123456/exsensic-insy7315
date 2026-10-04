@@ -12,15 +12,14 @@ namespace Exsensic.Web.Journeys;
 /// booking's details, and marking it completed. The API only returns bookings assigned to the caller
 /// and refuses completion before the slot starts.
 /// </summary>
-public sealed class StaffJourney(ApiClient api, BookingJourney bookings, JourneyClock clock, TimeProvider timeProvider) : IStaffJourney
+public sealed class StaffJourney(IStaffApi api, IBookingsApi bookingApi, BookingJourney bookings, JourneyClock clock, TimeProvider timeProvider) : IStaffJourney
 {
     private const string StaffBookings = "/Staff/Bookings";
 
     /// <summary>The caller's Confirmed and Completed bookings between two SAST dates, soonest first.</summary>
     public async Task<ApiResult<StaffScheduleViewModel>> ScheduleAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken)
     {
-        var result = await api.SendAsync<List<BookingSummaryDto>>(
-            HttpMethod.Get, $"api/v1/staff/me/bookings?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}", cancellationToken);
+        var result = await api.ScheduleAsync(from, to, cancellationToken);
         if (result.Value is not { } schedule) return new(result.StatusCode, default, false, result.Error);
 
         var model = new StaffScheduleViewModel
@@ -39,7 +38,7 @@ public sealed class StaffJourney(ApiClient api, BookingJourney bookings, Journey
     /// <summary>An assigned booking with everything needed to prepare; 404 if it is not assigned to the caller.</summary>
     public async Task<ApiResult<BookingDetailViewModel>> DetailAsync(int id, CancellationToken cancellationToken)
     {
-        var result = await api.SendAsync<BookingDetailDto>(HttpMethod.Get, $"api/v1/bookings/{id}", cancellationToken);
+        var result = await bookingApi.DetailAsync(id, cancellationToken);
         if (result.Value is not { } booking) return new(result.StatusCode, default, false, result.Error);
 
         var detail = await bookings.ToDetailAsync(booking, cancellationToken, StaffBookings);
@@ -53,7 +52,7 @@ public sealed class StaffJourney(ApiClient api, BookingJourney bookings, Journey
     /// <summary>PUT /api/v1/staff/bookings/{id}/complete with the version the staff member saw; null on success.</summary>
     public async Task<ApiProblem?> CompleteAsync(int id, CompleteBookingViewModel form, CancellationToken cancellationToken)
     {
-        var result = await api.SendJsonNoContentAsync(HttpMethod.Put, $"api/v1/staff/bookings/{id}/complete",
+        var result = await api.CompleteAsync(id,
             new CompleteBookingRequest(form.RowVersion), cancellationToken);
         return result.Error;
     }

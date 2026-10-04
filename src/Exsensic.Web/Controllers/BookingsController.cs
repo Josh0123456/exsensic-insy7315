@@ -1,3 +1,5 @@
+using Exsensic.Contracts.Auth;
+using Exsensic.Contracts.Common;
 using Exsensic.Web.ApiClients;
 using Exsensic.Web.Journeys;
 using Exsensic.Web.Models.Bookings;
@@ -8,8 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Exsensic.Web.Controllers;
 
 /// <summary>Client booking views and mutations; all persisted data and decisions belong to the API.</summary>
-[Authorize(Roles = "Client"), Route("Bookings")]
-public sealed class BookingsController(JourneyClock clock, IBookingJourney? journey = null) : JourneyController
+[Authorize(Roles = RoleNames.Client), Route("Bookings")]
+public sealed class BookingsController(JourneyClock clock, IBookingJourney journey) : JourneyController
 {
     /// <summary>Displays UI groupings without inventing stored booking statuses.</summary>
     [HttpGet("")]
@@ -18,21 +20,18 @@ public sealed class BookingsController(JourneyClock clock, IBookingJourney? jour
         if (filter is not ("Upcoming" or "Requested" or "Confirmed" or "Past" or "Cancelled")) filter = "Upcoming";
         page = Math.Max(1, page);
         var model = new BookingListViewModel { Filter = filter, Page = page };
-        return journey is null ? Unavailable("Index", model)
-            : await RenderAsync("Index", await journey.MineAsync(filter, page, cancellationToken), model, cancellationToken);
+        return await RenderAsync("Index", await journey.MineAsync(filter, page, cancellationToken), model, cancellationToken);
     }
 
     /// <summary>Loads the caller's booking; API 404 never reveals ownership.</summary>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken) =>
-        journey is null ? Unavailable("Details", new BookingDetailViewModel { Id = id })
-        : await RenderAsync("Details", await journey.DetailAsync(id, cancellationToken), new BookingDetailViewModel { Id = id }, cancellationToken);
+        await RenderAsync("Details", await journey.DetailAsync(id, cancellationToken), new BookingDetailViewModel { Id = id }, cancellationToken);
 
     /// <summary>Reloads the real booking before displaying any confirmation information.</summary>
     [HttpGet("{id:int}/Confirmation")]
     public async Task<IActionResult> Confirmation(int id, CancellationToken cancellationToken) =>
-        journey is null ? Unavailable("Confirmation", new BookingDetailViewModel { Id = id })
-        : await RenderAsync("Confirmation", await journey.DetailAsync(id, cancellationToken), new BookingDetailViewModel { Id = id }, cancellationToken);
+        await RenderAsync("Confirmation", await journey.DetailAsync(id, cancellationToken), new BookingDetailViewModel { Id = id }, cancellationToken);
 
     /// <summary>Displays real available times for the booking's own service.</summary>
     [HttpGet("{id:int}/Reschedule")]
@@ -40,8 +39,7 @@ public sealed class BookingsController(JourneyClock clock, IBookingJourney? jour
     {
         var start = clock.WindowStart(from);
         var model = new RescheduleViewModel { Id = id, From = start };
-        return journey is null ? Unavailable("Reschedule", model)
-            : await RenderAsync("Reschedule", await journey.ReschedulePageAsync(id, start, null, cancellationToken), model, cancellationToken);
+        return await RenderAsync("Reschedule", await journey.ReschedulePageAsync(id, start, null, cancellationToken), model, cancellationToken);
     }
 
     /// <summary>Submits the original concurrency token; conflicts require an explicit reload.</summary>
@@ -50,7 +48,6 @@ public sealed class BookingsController(JourneyClock clock, IBookingJourney? jour
     {
         model.Id = id;
         model.From = clock.WindowStart(model.From);
-        if (journey is null) { IntegrationError(); return Unavailable("Reschedule", model); }
         ApiProblem? problem = null;
         if (ModelState.IsValid)
         {
@@ -63,7 +60,7 @@ public sealed class BookingsController(JourneyClock clock, IBookingJourney? jour
             var special = await HandleProblemAsync(problem, cancellationToken);
             if (special is not null) return special;
         }
-        if (problem?.Code == "slot_unavailable")
+        if (problem?.Code == ErrorCodes.SlotUnavailable)
         {
             model.NewTimeSlotId = null;
             ModelState.Remove(nameof(model.NewTimeSlotId));
@@ -80,15 +77,13 @@ public sealed class BookingsController(JourneyClock clock, IBookingJourney? jour
     /// <summary>Shows a non-destructive cancellation confirmation page.</summary>
     [HttpGet("{id:int}/Cancel")]
     public async Task<IActionResult> Cancel(int id, CancellationToken cancellationToken) =>
-        journey is null ? Unavailable("Cancel", new CancelViewModel { Id = id })
-        : await RenderAsync("Cancel", await journey.CancelPageAsync(id, cancellationToken), new CancelViewModel { Id = id }, cancellationToken);
+        await RenderAsync("Cancel", await journey.CancelPageAsync(id, cancellationToken), new CancelViewModel { Id = id }, cancellationToken);
 
     /// <summary>Asks the API to cancel; never computes the cancellation window locally.</summary>
     [HttpPost("{id:int}/Cancel")]
     public async Task<IActionResult> Cancel(int id, CancelViewModel model, CancellationToken cancellationToken)
     {
         model.Id = id;
-        if (journey is null) { IntegrationError(); return Unavailable("Cancel", model); }
         ApiProblem? problem = null;
         if (ModelState.IsValid)
         {

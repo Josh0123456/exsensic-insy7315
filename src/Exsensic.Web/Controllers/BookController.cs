@@ -1,3 +1,5 @@
+using Exsensic.Contracts.Auth;
+using Exsensic.Contracts.Common;
 using Exsensic.Web.Journeys;
 using Exsensic.Web.ApiClients;
 using Exsensic.Web.Models.Book;
@@ -8,8 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Exsensic.Web.Controllers;
 
 /// <summary>Two-step Client wizard; availability and creation remain authoritative API operations.</summary>
-[Authorize(Roles = "Client"), Route("Book/{serviceId:int}")]
-public sealed class BookController(JourneyClock clock, IBookingWizardJourney? journey = null) : JourneyController
+[Authorize(Roles = RoleNames.Client), Route("Book/{serviceId:int}")]
+public sealed class BookController(JourneyClock clock, IBookingWizardJourney journey) : JourneyController
 {
     /// <summary>Displays a bounded 14-day availability window.</summary>
     [HttpGet("")]
@@ -17,8 +19,7 @@ public sealed class BookController(JourneyClock clock, IBookingWizardJourney? jo
     {
         var start = clock.WindowStart(from);
         var model = new SlotStepViewModel { ServiceId = serviceId, From = start };
-        return journey is null ? Unavailable("Index", model)
-            : await RenderAsync("Index", await journey.SlotsAsync(serviceId, start, null, cancellationToken), model, cancellationToken);
+        return await RenderAsync("Index", await journey.SlotsAsync(serviceId, start, null, cancellationToken), model, cancellationToken);
     }
 
     /// <summary>Retains only the selected identifier, reloading trusted summary data for the next step.</summary>
@@ -27,11 +28,6 @@ public sealed class BookController(JourneyClock clock, IBookingWizardJourney? jo
     {
         model.ServiceId = serviceId;
         model.From = clock.WindowStart(model.From);
-        if (journey is null)
-        {
-            IntegrationError();
-            return Unavailable("Index", model);
-        }
         if (ModelState.IsValid)
             return RedirectToAction(nameof(Details), new { serviceId, timeSlotId = model.TimeSlotId });
         return await RenderAsync("Index", await journey.SlotsAsync(serviceId, model.From, model.TimeSlotId, cancellationToken), model, cancellationToken);
@@ -43,8 +39,7 @@ public sealed class BookController(JourneyClock clock, IBookingWizardJourney? jo
     {
         if (string.IsNullOrWhiteSpace(timeSlotId)) return RedirectToAction(nameof(Index), new { serviceId });
         var model = new RequirementsStepViewModel { ServiceId = serviceId, TimeSlotId = timeSlotId };
-        return journey is null ? Unavailable("Details", model)
-            : await RenderAsync("Details", await journey.RequirementsAsync(serviceId, timeSlotId, cancellationToken), model, cancellationToken);
+        return await RenderAsync("Details", await journey.RequirementsAsync(serviceId, timeSlotId, cancellationToken), model, cancellationToken);
     }
 
     /// <summary>Reloads template metadata and submits to the API; never creates local booking state.</summary>
@@ -52,11 +47,6 @@ public sealed class BookController(JourneyClock clock, IBookingWizardJourney? jo
     public async Task<IActionResult> Details(int serviceId, RequirementsStepViewModel model, CancellationToken cancellationToken)
     {
         model.ServiceId = serviceId;
-        if (journey is null)
-        {
-            IntegrationError();
-            return Unavailable("Details", model);
-        }
         if (string.IsNullOrWhiteSpace(model.TimeSlotId)) return RedirectToAction(nameof(Index), new { serviceId });
         var loaded = await journey.RequirementsAsync(serviceId, model.TimeSlotId, cancellationToken);
         if (!loaded.IsSuccess || loaded.Value is null)
@@ -73,7 +63,7 @@ public sealed class BookController(JourneyClock clock, IBookingWizardJourney? jo
             if (result.IsSuccess && result.HasContent && result.Value > 0)
                 return RedirectToAction("Confirmation", "Bookings", new { id = result.Value });
             var problem = result.Error ?? new ApiClients.ApiProblem { Message = "The service returned no booking confirmation. Please check My Bookings before trying again." };
-            if (problem.Code == "slot_unavailable")
+            if (problem.Code == ErrorCodes.SlotUnavailable)
             {
                 problem.AddToTempData(TempData);
                 return RedirectToAction(nameof(Index), new { serviceId });

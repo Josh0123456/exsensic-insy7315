@@ -1,3 +1,5 @@
+using Exsensic.Contracts.Auth;
+using Exsensic.Contracts.Common;
 using Exsensic.Web.Journeys;
 using Exsensic.Web.Models.Admin;
 using Exsensic.Web.Models.Shared;
@@ -7,14 +9,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace Exsensic.Web.Controllers;
 
 /// <summary>Admin booking workflow only; catalogue, time-slot and user administration remain P3-owned.</summary>
-[Authorize(Roles = "Admin"), Route("Admin")]
-public sealed class AdminController(IAdminJourney? journey = null) : JourneyController
+[Authorize(Roles = RoleNames.Admin), Route("Admin")]
+public sealed class AdminController(IAdminJourney journey) : JourneyController
 {
     /// <summary>Displays real summary data, with no fabricated dashboard counts.</summary>
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken) =>
-        journey is null ? Unavailable("Index", new AdminDashboardViewModel())
-        : await RenderAsync("Index", await journey.DashboardAsync(cancellationToken), new AdminDashboardViewModel(), cancellationToken);
+        await RenderAsync("Index", await journey.DashboardAsync(cancellationToken), new AdminDashboardViewModel(), cancellationToken);
 
     /// <summary>Filters real bookings by status and date, preserving filters in pagination.</summary>
     [HttpGet("Bookings")]
@@ -24,15 +25,18 @@ public sealed class AdminController(IAdminJourney? journey = null) : JourneyCont
         page = Math.Max(1, page);
         var model = new AdminBookingListViewModel { Status = status, From = from, To = to, Page = page };
         if (from > to) ModelState.AddModelError(nameof(to), "The end date must be on or after the start date.");
-        if (journey is null || !ModelState.IsValid) return Unavailable("Bookings", model);
+        if (!ModelState.IsValid)
+        {
+            model.Problem = new ApiClients.ApiProblem { Message = "Check the date filters and try again.", Code = ErrorCodes.ValidationFailed };
+            return View(model);
+        }
         return await RenderAsync("Bookings", await journey.ListAsync(status, from, to, page, cancellationToken), model, cancellationToken);
     }
 
     /// <summary>Loads full review data and only API-supplied qualified/free staff choices.</summary>
     [HttpGet("Bookings/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken) =>
-        journey is null ? Unavailable("Details", new AdminReviewViewModel { Id = id })
-        : await RenderAsync("Details", await journey.ReviewAsync(id, cancellationToken), new AdminReviewViewModel { Id = id }, cancellationToken);
+        await RenderAsync("Details", await journey.ReviewAsync(id, cancellationToken), new AdminReviewViewModel { Id = id }, cancellationToken);
 
     /// <summary>Applies the filter form through POST, then redirects to its shareable read-only URL.</summary>
     [HttpPost("Bookings")]
@@ -43,7 +47,6 @@ public sealed class AdminController(IAdminJourney? journey = null) : JourneyCont
     [HttpPost("Bookings/{id:int}/Confirm")]
     public async Task<IActionResult> Confirm(int id, [Bind(Prefix = "Confirm")] ConfirmBookingViewModel model, CancellationToken cancellationToken)
     {
-        if (journey is null) { IntegrationError(); return Unavailable("Details", new AdminReviewViewModel { Id = id, Confirm = model }); }
         ApiClients.ApiProblem? problem = null;
         if (ModelState.IsValid)
         {
@@ -56,7 +59,7 @@ public sealed class AdminController(IAdminJourney? journey = null) : JourneyCont
             var special = await HandleProblemAsync(problem, cancellationToken, "Confirm");
             if (special is not null) return special;
         }
-        if (problem?.Code == "staff_unavailable")
+        if (problem?.Code == ErrorCodes.StaffUnavailable)
         {
             model.StaffUserId = null;
             ModelState.Remove("Confirm.StaffUserId");
@@ -77,7 +80,6 @@ public sealed class AdminController(IAdminJourney? journey = null) : JourneyCont
     [HttpPost("Bookings/{id:int}/Reject")]
     public async Task<IActionResult> Reject(int id, [Bind(Prefix = "Reject")] RejectBookingViewModel model, CancellationToken cancellationToken)
     {
-        if (journey is null) { IntegrationError(); return Unavailable("Details", new AdminReviewViewModel { Id = id, Reject = model }); }
         ApiClients.ApiProblem? problem = null;
         if (ModelState.IsValid)
         {
