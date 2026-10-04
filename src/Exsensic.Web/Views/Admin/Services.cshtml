@@ -1,5 +1,14 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
 @{
+    ViewData["Title"] = "Services";
 }
+<partial name="_PageHeader" model='@(new PageHeaderViewModel
+         {
+             Title = "Services",
+             Eyebrow = "Admin",
+             Subtitle = "Manage what Exsensic offers."
+         })' />
+<partial name="_EmptyState" model='@(new EmptyStateViewModel
+         {
+             Title = "Service management",
+             Message = "The service list is being wired to the API."
+         })' />
