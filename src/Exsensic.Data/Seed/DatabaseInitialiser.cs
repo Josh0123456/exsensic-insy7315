@@ -9,10 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Exsensic.Data.Seed;
 
-
-/// Applies migrations, ensures roles and the first admin, and idempotently seeds demo data.
-/// Called at startup in Development and Staging only.
-
 public static class DatabaseInitialiser
 {
     public static async Task InitialiseAsync(
@@ -78,7 +74,6 @@ public static class DatabaseInitialiser
             return;
         }
 
-        // Staff. Check by email before inserting so restarts don't duplicate.
         var photographer = await EnsureUserAsync(userManager, "photo@exsensic.local",
             "Sipho Photographer", RoleNames.Staff, demoPassword, logger);
         var webDev = await EnsureUserAsync(userManager, "web@exsensic.local",
@@ -118,7 +113,7 @@ public static class DatabaseInitialiser
 
         await db.SaveChangesAsync(ct);
 
-        // Services. Matches the prototype list from Part 1.
+        // Services.
         var services = new[]
         {
             new Service
@@ -171,7 +166,7 @@ public static class DatabaseInitialiser
 
         await db.SaveChangesAsync(ct);
 
-        // StaffService links. Now that services have IDs, wire them up.
+        // StaffService links.
         var savedServices = await db.Services.ToListAsync(ct);
         var photoSvc = savedServices.First(s => s.Name.Contains("Photoshoot"));
         var webSvcA = savedServices.First(s => s.Name.Contains("Website Design"));
@@ -213,7 +208,252 @@ public static class DatabaseInitialiser
         }
 
         await db.SaveChangesAsync(ct);
+
+        await SeedDemoBookingsAsync(db, userManager, config, logger, ct);
+
         logger.LogInformation("Demo seed complete.");
+    }
+
+    private static async Task SeedDemoBookingsAsync(
+        ExsensicDbContext db,
+        UserManager<ApplicationUser> userManager,
+        IConfiguration config,
+        ILogger logger,
+        CancellationToken ct)
+    {
+        var nowUtc = DateTimeOffset.UtcNow;
+        var nowSast = nowUtc.ToOffset(TimeSpan.FromHours(2));
+        var todaySast = DateOnly.FromDateTime(nowSast.DateTime);
+        
+
+        var clientA = await userManager.FindByEmailAsync("client.a@example.com");
+        var clientB = await userManager.FindByEmailAsync("client.b@example.com");
+        var photographer = await userManager.FindByEmailAsync("photo@exsensic.local");
+        var webDev = await userManager.FindByEmailAsync("web@exsensic.local");
+
+        var adminEmail = config["Seed:AdminEmail"];
+        var admin = string.IsNullOrWhiteSpace(adminEmail)
+            ? null
+            : await userManager.FindByEmailAsync(adminEmail);
+
+        if (clientA is null || clientB is null || photographer is null || webDev is null || admin is null)
+        {
+            logger.LogWarning("Demo booking seed skipped: one or more seed users are missing.");
+            return;
+        }
+
+        var photoSvc = await db.Services.FirstOrDefaultAsync(s => s.Name.Contains("Photoshoot"), ct);
+        var webSvc = await db.Services.FirstOrDefaultAsync(s => s.Name.Contains("Website Design"), ct);
+        var igSvc = await db.Services.FirstOrDefaultAsync(s => s.Name.Contains("Instagram"), ct);
+        if (photoSvc is null || webSvc is null || igSvc is null)
+        {
+            logger.LogWarning("Demo booking seed skipped: services not found.");
+            return;
+        }
+
+        var futureSlots = await db.TimeSlots
+            .Where(t => t.SlotDate > todaySast)
+            .OrderBy(t => t.SlotDate).ThenBy(t => t.StartTime)
+            .Take(5)
+            .ToListAsync(ct);
+        if (futureSlots.Count < 5)
+        {
+            logger.LogWarning("Demo booking seed skipped: fewer than five future slots available.");
+            return;
+        }
+
+        var weekAgo = todaySast.AddDays(-7);
+        var weekAgoSlot = await EnsureSlotAsync(db, weekAgo, new TimeOnly(9, 0), new TimeOnly(11, 0), ct);
+
+        var startedHour = Math.Clamp(nowSast.Hour - 1, 0, 22);
+        var startedSlot = await EnsureSlotAsync(
+            db, todaySast, new TimeOnly(startedHour, 0), new TimeOnly(startedHour + 1, 0), ct);
+
+        // Two Requested.
+        await AddDemoBookingIfMissing(db,
+            "EXS-DEMORQAAA", clientA.Id, photoSvc.Id, futureSlots[0].Id,
+            BookingStatus.Requested, null, clientA.Id,
+            nowUtc.AddDays(-2), null,
+            new[]
+            {
+                ("shootType", "Product"),
+                ("location", "Studio"),
+                ("quantity", "10"),
+                ("description", "Product shots for the winter catalogue. Online store only."),
+            }, ct);
+
+        await AddDemoBookingIfMissing(db,
+            "EXS-DEMORQBBB", clientB.Id, igSvc.Id, futureSlots[1].Id,
+            BookingStatus.Requested, null, clientB.Id,
+            nowUtc.AddDays(-1), null,
+            new[]
+            {
+                ("accountHandle", "@dlaminidesign"),
+                ("focus", "Growth"),
+                ("description", "Growing the account to reach a wider design client base."),
+            }, ct);
+
+        await AddDemoBookingIfMissing(db,
+            "EXS-DEMOCFAAA", clientA.Id, photoSvc.Id, futureSlots[2].Id,
+            BookingStatus.Confirmed, photographer.Id, admin.Id,
+            nowUtc.AddDays(-5), null,
+            new[]
+            {
+                ("shootType", "Team"),
+                ("location", "On location"),
+                ("quantity", "6"),
+                ("description", "Team headshots for the new website."),
+            }, ct);
+
+        await AddDemoBookingIfMissing(db,
+            "EXS-DEMOCFBBB", clientB.Id, webSvc.Id, futureSlots[3].Id,
+            BookingStatus.Confirmed, webDev.Id, admin.Id,
+            nowUtc.AddDays(-4), null,
+            new[]
+            {
+                ("projectType", "New website"),
+                ("pageCount", "8"),
+                ("description", "Simple brochure site for our design studio."),
+            }, ct);
+
+        await AddDemoBookingIfMissing(db,
+            "EXS-DEMOCOAAA", clientA.Id, photoSvc.Id, weekAgoSlot.Id,
+            BookingStatus.Completed, photographer.Id, admin.Id,
+            nowUtc.AddDays(-14), null,
+            new[]
+            {
+                ("shootType", "Product"),
+                ("location", "Studio"),
+                ("quantity", "20"),
+                ("description", "Catalogue photos from last quarter."),
+            }, ct);
+
+        await AddDemoBookingIfMissing(db,
+            "EXS-DEMOCNAAA", clientB.Id, webSvc.Id, futureSlots[4].Id,
+            BookingStatus.Cancelled, null, admin.Id,
+            nowUtc.AddDays(-3), "Rejected: Dates clash with another booking.",
+            new[]
+            {
+                ("projectType", "Redesign"),
+                ("pageCount", "5"),
+                ("description", "Small redesign of an existing brochure site."),
+            }, ct);
+
+        await AddDemoBookingIfMissing(db,
+            "EXS-DEMOSTAAA", clientA.Id, photoSvc.Id, startedSlot.Id,
+            BookingStatus.Confirmed, photographer.Id, admin.Id,
+            nowUtc.AddDays(-2), null,
+            new[]
+            {
+                ("shootType", "Product"),
+                ("location", "Studio"),
+                ("quantity", "3"),
+                ("description", "Quick product shots for a social post."),
+            }, ct);
+
+        logger.LogInformation("Demo booking seed complete.");
+    }
+
+    private static async Task<TimeSlot> EnsureSlotAsync(
+        ExsensicDbContext db,
+        DateOnly date,
+        TimeOnly start,
+        TimeOnly end,
+        CancellationToken ct)
+    {
+        var existing = await db.TimeSlots.FirstOrDefaultAsync(
+            t => t.SlotDate == date && t.StartTime == start, ct);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var slot = new TimeSlot { SlotDate = date, StartTime = start, EndTime = end };
+        db.TimeSlots.Add(slot);
+        await db.SaveChangesAsync(ct);
+        return slot;
+    }
+
+    private static async Task AddDemoBookingIfMissing(
+        ExsensicDbContext db,
+        string reference,
+        Guid clientId,
+        int serviceId,
+        int timeSlotId,
+        BookingStatus status,
+        Guid? staffUserId,
+        Guid approverId,
+        DateTimeOffset createdAtUtc,
+        string? cancellationReason,
+        (string Key, string Value)[] requirements,
+        CancellationToken ct)
+    {
+        if (await db.Bookings.AnyAsync(b => b.Reference == reference, ct))
+        {
+            return;
+        }
+
+        var booking = new Booking
+        {
+            Reference = reference,
+            ClientUserId = clientId,
+            ServiceId = serviceId,
+            TimeSlotId = timeSlotId,
+            StaffUserId = staffUserId,
+            Status = status,
+            CancellationReason = cancellationReason,
+            CreatedAtUtc = createdAtUtc,
+            UpdatedAtUtc = createdAtUtc,
+        };
+
+        foreach (var (key, value) in requirements)
+        {
+            booking.Requirements.Add(new BookingRequirement { FieldKey = key, FieldValue = value });
+        }
+
+        var confirmed = createdAtUtc.AddHours(20);
+        var finished = createdAtUtc.AddDays(2);
+
+        switch (status)
+        {
+            case BookingStatus.Requested:
+                booking.StatusHistory.Add(HistoryRow(null, BookingStatus.Requested, clientId, createdAtUtc, null));
+                booking.UpdatedAtUtc = createdAtUtc;
+                break;
+
+            case BookingStatus.Confirmed:
+                booking.StatusHistory.Add(HistoryRow(null, BookingStatus.Requested, clientId, createdAtUtc, null));
+                booking.StatusHistory.Add(HistoryRow(BookingStatus.Requested, BookingStatus.Confirmed, approverId, confirmed, null));
+                booking.UpdatedAtUtc = confirmed;
+                break;
+
+            case BookingStatus.Completed:
+                booking.StatusHistory.Add(HistoryRow(null, BookingStatus.Requested, clientId, createdAtUtc, null));
+                booking.StatusHistory.Add(HistoryRow(BookingStatus.Requested, BookingStatus.Confirmed, approverId, confirmed, null));
+                booking.StatusHistory.Add(HistoryRow(BookingStatus.Confirmed, BookingStatus.Completed, staffUserId ?? approverId, finished, null));
+                booking.UpdatedAtUtc = finished;
+                break;
+
+            case BookingStatus.Cancelled:
+                booking.StatusHistory.Add(HistoryRow(null, BookingStatus.Requested, clientId, createdAtUtc, null));
+                booking.StatusHistory.Add(HistoryRow(BookingStatus.Requested, BookingStatus.Cancelled, approverId, confirmed, cancellationReason));
+                booking.UpdatedAtUtc = confirmed;
+                break;
+        }
+
+        db.Bookings.Add(booking);
+        await db.SaveChangesAsync(ct);
+
+        static BookingStatusHistory HistoryRow(
+            BookingStatus? from, BookingStatus to, Guid by, DateTimeOffset when, string? note) =>
+            new()
+            {
+                FromStatus = from,
+                ToStatus = to,
+                ChangedByUserId = by,
+                ChangedAtUtc = when,
+                Note = note,
+            };
     }
 
     private static async Task<ApplicationUser?> EnsureUserAsync(
