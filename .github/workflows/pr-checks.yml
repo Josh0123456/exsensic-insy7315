@@ -30,9 +30,10 @@ jobs:
             exit 1
           fi
 
-      # A release brings every commit already reviewed on develop, so only feature branches are checked.
+      # A release brings commits already reviewed on develop, and Dependabot writes its own messages,
+      # so only people's feature branches are checked.
       - name: Check commit messages
-        if: "!startsWith(github.head_ref, 'release/')"
+        if: "!startsWith(github.head_ref, 'release/') && !startsWith(github.head_ref, 'dependabot/')"
         env:
           BASE: ${{ github.base_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
