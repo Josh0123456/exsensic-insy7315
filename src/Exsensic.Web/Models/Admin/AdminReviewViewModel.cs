@@ -10,7 +10,7 @@ namespace Exsensic.Web.Models.Admin;
 public sealed class AdminReviewViewModel : JourneyPage
 {
     /// <summary>Id for the Web presentation.</summary>
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>Detail for the Web presentation.</summary>
     [BindNever]

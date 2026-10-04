@@ -40,6 +40,12 @@ builder.Services.AddScoped<AccountSession>();
 // Journey adapters connect the screens to the API; a screen shows "not available yet" until its adapter is registered.
 builder.Services.AddScoped<IAccountJourney, AccountJourney>();
 builder.Services.AddScoped<ICatalogJourney, CatalogJourney>();
+builder.Services.AddScoped<IBookingWizardJourney, BookingWizardJourney>();
+// BookingJourney is also used directly by the admin and staff adapters for the shared booking details.
+builder.Services.AddScoped<BookingJourney>();
+builder.Services.AddScoped<IBookingJourney>(services => services.GetRequiredService<BookingJourney>());
+builder.Services.AddScoped<IAdminJourney, AdminJourney>();
+builder.Services.AddScoped<IStaffJourney, StaffJourney>();
 // Notifications (Daniel): typed client for the notifications page and the nav badge.
 builder.Services.AddScoped<INotificationsApi, NotificationsApi>();
 

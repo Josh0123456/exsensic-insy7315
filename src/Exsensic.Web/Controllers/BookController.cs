@@ -70,7 +70,7 @@ public sealed class BookController(JourneyClock clock, IBookingWizardJourney? jo
         if (ModelState.IsValid)
         {
             var result = await journey.SubmitAsync(model, cancellationToken);
-            if (result.IsSuccess && result.HasContent && result.Value != Guid.Empty)
+            if (result.IsSuccess && result.HasContent && result.Value > 0)
                 return RedirectToAction("Confirmation", "Bookings", new { id = result.Value });
             var problem = result.Error ?? new ApiClients.ApiProblem { Message = "The service returned no booking confirmation. Please check My Bookings before trying again." };
             if (problem.Code == "slot_unavailable")

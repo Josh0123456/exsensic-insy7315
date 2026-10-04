@@ -23,14 +23,14 @@ public sealed class StaffController(JourneyClock clock, IStaffJourney? journey =
     }
 
     /// <summary>Displays only information returned by the authorized API detail endpoint.</summary>
-    [HttpGet("Bookings/{id:guid}")]
-    public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken) =>
+    [HttpGet("Bookings/{id:int}")]
+    public async Task<IActionResult> Details(int id, CancellationToken cancellationToken) =>
         journey is null ? Unavailable("Details", new BookingDetailViewModel { Id = id })
         : await RenderAsync("Details", await journey.DetailAsync(id, cancellationToken), new BookingDetailViewModel { Id = id }, cancellationToken);
 
     /// <summary>Requests completion with concurrency state and reloads authoritative API data.</summary>
-    [HttpPost("Bookings/{id:guid}/Complete")]
-    public async Task<IActionResult> Complete(Guid id, CompleteBookingViewModel model, CancellationToken cancellationToken)
+    [HttpPost("Bookings/{id:int}/Complete")]
+    public async Task<IActionResult> Complete(int id, CompleteBookingViewModel model, CancellationToken cancellationToken)
     {
         if (journey is null) { IntegrationError(); return Unavailable("Details", new BookingDetailViewModel { Id = id }); }
         if (ModelState.IsValid)

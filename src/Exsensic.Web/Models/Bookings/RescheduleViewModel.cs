@@ -9,7 +9,7 @@ namespace Exsensic.Web.Models.Bookings;
 public sealed class RescheduleViewModel : JourneyPage
 {
     /// <summary>Id for the Web presentation.</summary>
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>From for the Web presentation.</summary>
     public DateOnly From { get; set; }
