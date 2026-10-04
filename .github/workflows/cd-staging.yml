@@ -194,6 +194,18 @@ jobs:
       - name: Install Chromium
         run: pwsh tests/Exsensic.E2ETests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
+      # A deploy restarts the API, which may restart again if Azure SQL refuses its first logins. Start the
+      # tests only once the catalogue (Web → API → database) actually shows services, waiting up to 6 minutes.
+      - name: Wait until staging serves the catalogue
+        run: |
+          for attempt in $(seq 1 36); do
+            if curl -s --max-time 30 "$E2E_BASE_URL/Services" | grep -q 'service-card'; then
+              echo "Staging is ready."; exit 0
+            fi
+            echo "Attempt $attempt: catalogue not ready yet."; sleep 10
+          done
+          echo "Staging did not serve the catalogue within 6 minutes."; exit 1
+
       - name: Run end-to-end tests against staging
         run: >
           dotnet test tests/Exsensic.E2ETests/Exsensic.E2ETests.csproj

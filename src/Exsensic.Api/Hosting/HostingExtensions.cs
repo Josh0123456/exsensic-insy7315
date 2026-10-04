@@ -3,6 +3,8 @@ using Exsensic.Data.Seed;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Exsensic.Api.Hosting;
 
@@ -107,7 +109,25 @@ public static class HostingExtensions
         var seedDemoData = app.Configuration.GetValue<bool?>("Database:SeedDemoData")
             ?? (app.Environment.IsDevelopment() || app.Environment.IsStaging());
         app.Logger.LogInformation("Initialising the database (demo data: {SeedDemoData}).", seedDemoData);
-        await DatabaseInitialiser.InitialiseAsync(app.Services, seedDemoData, app.Lifetime.ApplicationStopping);
+
+        // Right after a restart, Azure SQL can refuse logins for a minute or two ("connection reset by peer").
+        // EF's retries cover short blips; if they run out, wait and start again instead of crashing the API.
+        // Migrations and the seed are idempotent, so a repeat is safe.
+        const int attempts = 3;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await DatabaseInitialiser.InitialiseAsync(app.Services, seedDemoData, app.Lifetime.ApplicationStopping);
+                return;
+            }
+            catch (Exception ex) when (attempt < attempts && ex is SqlException or RetryLimitExceededException)
+            {
+                app.Logger.LogWarning(ex, "Database initialisation attempt {Attempt} of {Attempts} failed; retrying in 5 seconds.",
+                    attempt, attempts);
+                await Task.Delay(TimeSpan.FromSeconds(5), app.Lifetime.ApplicationStopping);
+            }
+        }
     }
 
     /// <summary>
