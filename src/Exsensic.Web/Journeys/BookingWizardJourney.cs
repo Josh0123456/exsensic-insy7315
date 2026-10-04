@@ -16,8 +16,6 @@ namespace Exsensic.Web.Journeys;
 /// </summary>
 public sealed class BookingWizardJourney(ApiClient api, JourneyClock clock) : IBookingWizardJourney
 {
-    private const int WindowDays = 14;
-
     /// <summary>The longest look-ahead the API allows for availability (ServiceCatalogService.MaxAvailabilityDays).</summary>
     private const int MaxLookAheadDays = 60;
 
@@ -27,25 +25,8 @@ public sealed class BookingWizardJourney(ApiClient api, JourneyClock clock) : IB
         var service = await api.SendAsync<ServiceDto>(HttpMethod.Get, $"api/v1/services/{serviceId}", cancellationToken);
         if (service.Value is null) return Fail<SlotStepViewModel>(service.StatusCode, service.Error);
 
-        var to = from.AddDays(WindowDays - 1);
-        var slots = await AvailabilityAsync(serviceId, from, to, cancellationToken);
+        var slots = await api.AvailabilityAsync(serviceId, from, from.AddDays(SlotPickers.WindowDays - 1), cancellationToken);
         if (slots.Value is null) return Fail<SlotStepViewModel>(slots.StatusCode, slots.Error);
-
-        var dates = Enumerable.Range(0, WindowDays)
-            .Select(offset => from.AddDays(offset))
-            .Select(date =>
-            {
-                var daySlots = slots.Value.Where(s => s.SlotDate == date)
-                    .Select(s => new SlotOptionViewModel
-                    {
-                        Id = s.TimeSlotId.ToString(CultureInfo.InvariantCulture),
-                        StartTime = s.StartTime,
-                        EndTime = s.EndTime,
-                    })
-                    .ToList();
-                return new SlotDateViewModel { Date = date, IsAvailable = daySlots.Count > 0, Slots = daySlots };
-            })
-            .ToList();
 
         var model = new SlotStepViewModel
         {
@@ -53,15 +34,8 @@ public sealed class BookingWizardJourney(ApiClient api, JourneyClock clock) : IB
             From = from,
             TimeSlotId = selectedSlotId,
             Service = ToCard(service.Value),
-            Picker = new SlotPickerViewModel
-            {
-                Id = "slot-picker",
-                // Must match SlotStepViewModel.TimeSlotId so the chosen slot is posted back.
-                InputName = nameof(SlotStepViewModel.TimeSlotId),
-                SelectedSlotId = selectedSlotId,
-                SelectedDate = slots.Value.FirstOrDefault(s => s.TimeSlotId.ToString(CultureInfo.InvariantCulture) == selectedSlotId)?.SlotDate,
-                Dates = dates,
-            },
+            // The picker posts its value as TimeSlotId, the property the next step reads.
+            Picker = SlotPickers.Build(slots.Value, from, nameof(SlotStepViewModel.TimeSlotId), selectedSlotId),
             IntegrationAvailable = true,
         };
         return Ok(service, model);
@@ -80,7 +54,7 @@ public sealed class BookingWizardJourney(ApiClient api, JourneyClock clock) : IB
             HttpMethod.Get, $"api/v1/services/{serviceId}/requirement-template", cancellationToken);
         if (template.Value is null) return Fail<RequirementsStepViewModel>(template.StatusCode, template.Error);
 
-        var slots = await AvailabilityAsync(serviceId, clock.Today, clock.Today.AddDays(MaxLookAheadDays - 1), cancellationToken);
+        var slots = await api.AvailabilityAsync(serviceId, clock.Today, clock.Today.AddDays(MaxLookAheadDays - 1), cancellationToken);
         if (slots.Value is null) return Fail<RequirementsStepViewModel>(slots.StatusCode, slots.Error);
 
         var slot = slots.Value.FirstOrDefault(s => s.TimeSlotId.ToString(CultureInfo.InvariantCulture) == timeSlotId);
@@ -142,10 +116,6 @@ public sealed class BookingWizardJourney(ApiClient api, JourneyClock clock) : IB
             ? new ApiResult<int>(result.StatusCode, created.Id, true, null)
             : new ApiResult<int>(result.StatusCode, 0, false, result.Error);
     }
-
-    private Task<ApiResult<List<AvailableSlotDto>>> AvailabilityAsync(int serviceId, DateOnly from, DateOnly to, CancellationToken cancellationToken) =>
-        api.SendAsync<List<AvailableSlotDto>>(HttpMethod.Get,
-            $"api/v1/services/{serviceId}/availability?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}", cancellationToken);
 
     private static ServiceCardViewModel ToCard(ServiceDto s) => new()
     {
