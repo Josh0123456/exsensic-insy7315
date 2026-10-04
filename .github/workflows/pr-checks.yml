@@ -1,0 +1,48 @@
+# Checks every pull request follows the branch and commit conventions in CONTRIBUTING.md.
+# Add the label "commit-format-exception" to a pull request to skip the checks.
+name: pr-checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-checks:
+    if: "!contains(github.event.pull_request.labels.*.name, 'commit-format-exception')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check branch name
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          if [[ ! "$BRANCH" =~ ^(feat|fix|chore|docs|test|ci|refactor|style|perf)/p[1-4]-[a-z0-9-]+$ ]] \
+            && [[ ! "$BRANCH" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+            && [[ ! "$BRANCH" =~ ^dependabot/ ]]; then
+            echo "Branch '$BRANCH' does not match the naming convention, for example feat/p2-booking-api."
+            exit 1
+          fi
+
+      # A release brings every commit already reviewed on develop, so only feature branches are checked.
+      - name: Check commit messages
+        if: "!startsWith(github.head_ref, 'release/')"
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          FAIL=0
+          while IFS= read -r msg; do
+            [ -z "$msg" ] && continue
+            if [[ ! "$msg" =~ ^(feat|fix|refactor|style|test|docs|ci|chore|perf)\([a-z0-9-]+\):\ .+ ]]; then
+              echo "Bad commit message: $msg"
+              FAIL=1
+            fi
+          done <<< "$(git log --no-merges --format=%s "origin/$BASE..$HEAD_SHA")"
+          exit $FAIL

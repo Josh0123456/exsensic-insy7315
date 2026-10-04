@@ -39,28 +39,6 @@ public sealed class AdminController(IAdminJourney? journey = null) : JourneyCont
     public IActionResult FilterBookings(string? status, string? from, string? to) =>
         RedirectToAction(nameof(Bookings), new { status, from, to });
 
-    /// <summary>Lists users for admin management.</summary>
-    [HttpGet("Users")]
-    public async Task<IActionResult> Users(string? role, CancellationToken cancellationToken)
-    {
-        if (journey is null) return Unavailable("Users", new UserManagementViewModel { Role = role });
-
-        var model = new UserManagementViewModel { Role = role, IntegrationAvailable = true };
-        // For now use the API client directly. Replace the placeholder call when you wire it up.
-        // The typed client pattern is the same as everywhere else in the project.
-        // This keeps the action compiling while you finish the API client.
-        return View("Users", model);
-    }
-
-    /// <summary>Activates or deactivates a user account.</summary>
-    [HttpPost("Users/ToggleActive")]
-    public async Task<IActionResult> ToggleActive(Guid userId, bool isActive, CancellationToken cancellationToken)
-    {
-        // Placeholder for the API call. Wire to IAdminUsersApi once it exists.
-        TempData[ToastKeys.Success] = isActive ? "User activated." : "User deactivated.";
-        return RedirectToAction(nameof(Users));
-    }
-
     /// <summary>Confirms with the chosen staff member and original RowVersion.</summary>
     [HttpPost("Bookings/{id:int}/Confirm")]
     public async Task<IActionResult> Confirm(int id, [Bind(Prefix = "Confirm")] ConfirmBookingViewModel model, CancellationToken cancellationToken)
