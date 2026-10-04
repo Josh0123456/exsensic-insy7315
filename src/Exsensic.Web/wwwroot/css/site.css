@@ -342,6 +342,10 @@ p { margin: 0 0 var(--space-16); }
     .service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* Admin tables: action buttons sit side by side (inline style attributes are blocked by the CSP). */
+.inline-form { display: inline; }
+.inline-choice { display: inline-block; margin-right: var(--space-16); }
+
 @media (min-width: 768px) {
     .site-navigation > .page-container { flex-wrap: nowrap; }
     .hero { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); padding: var(--space-48); }

@@ -67,7 +67,7 @@ else
                     <td>
                         @if (canBlock)
                         {
-                            <form method="post" asp-action="Block" asp-route-id="@slot.Id" data-single-submit style="display:inline">
+                            <form method="post" asp-action="Block" asp-route-id="@slot.Id" data-single-submit class="inline-form">
                                 <input type="hidden" name="rowVersion" value="@slot.RowVersion" />
                                 <input type="text" name="reason" placeholder="Reason" required maxlength="500" aria-label="Block reason" />
                                 <button type="submit" class="button-secondary" data-confirm-dialog="block-slot-@slot.Id">Block</button>
@@ -82,13 +82,13 @@ else
                         }
                         @if (slot.IsBlocked)
                         {
-                            <form method="post" asp-action="Unblock" asp-route-id="@slot.Id" data-single-submit style="display:inline">
+                            <form method="post" asp-action="Unblock" asp-route-id="@slot.Id" data-single-submit class="inline-form">
                                 <button type="submit" class="button-secondary">Unblock</button>
                             </form>
                         }
                         @if (canDelete)
                         {
-                            <form method="post" asp-action="Delete" asp-route-id="@slot.Id" data-single-submit style="display:inline">
+                            <form method="post" asp-action="Delete" asp-route-id="@slot.Id" data-single-submit class="inline-form">
                                 <button type="submit" class="button-secondary" data-confirm-dialog="delete-slot-@slot.Id">Delete</button>
                             </form>
                             <partial name="_ConfirmDialog" model='@(new ConfirmDialogViewModel

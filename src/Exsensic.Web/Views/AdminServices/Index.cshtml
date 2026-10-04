@@ -55,7 +55,7 @@ else
                     <td>@(service.IsActive ? "Active" : "Archived")</td>
                     <td>
                         <a href="@Url.Action("Edit", new { id = service.Id })">Edit<span class="visually-hidden"> @service.Name</span></a>
-                        <form method="post" asp-action="Toggle" asp-route-id="@service.Id" data-single-submit style="display:inline">
+                        <form method="post" asp-action="Toggle" asp-route-id="@service.Id" data-single-submit class="inline-form">
                             <input type="hidden" name="rowVersion" value="@service.RowVersion" />
                             <input type="hidden" name="isActive" value="@((!service.IsActive).ToString().ToLowerInvariant())" />
                             <button type="submit" class="button-secondary" data-confirm-dialog="toggle-service-@service.Id">

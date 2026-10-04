@@ -65,7 +65,7 @@ else
                     <td>@user.Role</td>
                     <td>@(user.IsActive ? "Active" : "Inactive")</td>
                     <td>
-                        <form method="post" asp-action="Toggle" asp-route-id="@user.UserId" data-single-submit style="display:inline">
+                        <form method="post" asp-action="Toggle" asp-route-id="@user.UserId" data-single-submit class="inline-form">
                             <input type="hidden" name="isActive" value="@((!user.IsActive).ToString().ToLowerInvariant())" />
                             <button type="submit" class="button-secondary" data-confirm-dialog="toggle-user-@user.UserId">
                                 @(user.IsActive ? "Deactivate" : "Activate")
