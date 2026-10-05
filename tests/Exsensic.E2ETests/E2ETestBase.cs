@@ -162,6 +162,8 @@ public abstract class E2ETestBase : IAsyncLifetime
     /// </summary>
     protected static async Task ClickAndConfirmAsync(IPage page, string buttonName)
     {
+        // The dialog is opened by site.js; clicking before it has loaded would submit the form directly.
+        await page.WaitForLoadStateAsync(LoadState.Load);
         await page.GetByRole(AriaRole.Button, new() { Name = buttonName }).First.ClickAsync();
         await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = buttonName }).ClickAsync();
     }
