@@ -21,7 +21,9 @@
   <span> · </span>
   <a href="https://app-exsensic-web-staging.azurewebsites.net">Staging</a>
   <span> · </span>
-  <a href="#demo-video-and-presentation">Demo video</a>
+  <a href="https://youtu.be/SZw5lm-nV2g">Demo video</a>
+  <span> · </span>
+  <a href="https://github.com/Josh0123456/exsensic-insy7315/releases/tag/v1.0.0">Release v1.0.0</a>
   <span> · </span>
   <a href="docs/architecture.md">Architecture</a>
   <span> · </span>
@@ -69,6 +71,10 @@ separate ASP.NET Core Web API, hosted on Azure with automated testing and deploy
 |---|---|---|
 | Production | https://app-exsensic-web.azurewebsites.net | The live system used for the demo and marking |
 | Staging | https://app-exsensic-web-staging.azurewebsites.net | Every merge to `develop` is deployed and tested here first |
+| Presentation video | https://youtu.be/SZw5lm-nV2g | Team presentation and live demo on production |
+| Release | https://github.com/Josh0123456/exsensic-insy7315/releases/tag/v1.0.0 | The version running in production |
+
+> The first page load can take up to a minute while the free database wakes up; after that pages load in under a second.
 
 **Demo accounts** (one client, one staff member, one admin) are provided in the **ARC submission
 comment**, never in this repository. The API is not reachable from the internet directly; it only accepts
@@ -350,8 +356,7 @@ Examples: <!-- add links -->[a feature pull request](https://github.com/Josh0123
 
 ## Demo video and presentation
 
-- **Backup demo video:** *link to be added*
-- **Presentation deck:** *link to be added*
+- **Presentation and live demo video:** https://youtu.be/SZw5lm-nV2g
 
 ## Team
 
