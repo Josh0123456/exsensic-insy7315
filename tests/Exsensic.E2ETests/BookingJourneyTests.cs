@@ -36,8 +36,10 @@ public class BookingJourneyTests : E2ETestBase
     {
         var staff = await SignedInAsync(Role.Staff);
 
+        // Only the seeded EXS-TODAY booking is sure to have started; other runs leave confirmed bookings
+        // later today that cannot be completed yet.
         var today = staff.Locator("section.schedule-day", new() { Has = staff.Locator(".today-label") });
-        await today.Locator("article", new() { HasText = "Confirmed" }).First
+        await today.Locator("article", new() { HasText = "EXS-TODAY" }).Filter(new() { HasText = "Confirmed" }).First
             .GetByRole(AriaRole.Link, new() { NameRegex = new Regex("^View booking") }).ClickAsync();
 
         await ClickAndConfirmAsync(staff, "Mark as completed");

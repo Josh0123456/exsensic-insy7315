@@ -118,8 +118,16 @@ public abstract class E2ETestBase : IAsyncLifetime
         await client.Locator("article.service-card", new() { HasText = serviceName })
             .First.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("^Book ") }).ClickAsync();
 
-        // Step 1: the first selectable time on the selected date.
-        await client.Locator(".slot-panel:not([hidden]) label.slot-choice:has(input:not([disabled]))").First.ClickAsync();
+        // Step 1: the first selectable time on the selected date. Every run books real slots on staging, so
+        // when the shown fortnight is full, move on with "Show later dates" (the seed covers about six weeks).
+        var freeSlot = client.Locator(".slot-panel:not([hidden]) label.slot-choice:has(input:not([disabled]))").First;
+        for (var fortnight = 0; fortnight < 3 && !await freeSlot.IsVisibleAsync(); fortnight++)
+        {
+            await client.GetByRole(AriaRole.Link, new() { Name = "Show later dates" }).ClickAsync();
+            await client.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+        }
+
+        await freeSlot.ClickAsync();
         await client.GetByRole(AriaRole.Button, new() { Name = "Continue to requirements" }).ClickAsync();
 
         // Step 2: fill the requirement form whatever the service category's template contains.
@@ -154,6 +162,8 @@ public abstract class E2ETestBase : IAsyncLifetime
     /// </summary>
     protected static async Task ClickAndConfirmAsync(IPage page, string buttonName)
     {
+        // The dialog is opened by site.js; clicking before it has loaded would submit the form directly.
+        await page.WaitForLoadStateAsync(LoadState.Load);
         await page.GetByRole(AriaRole.Button, new() { Name = buttonName }).First.ClickAsync();
         await page.GetByRole(AriaRole.Dialog).GetByRole(AriaRole.Button, new() { Name = buttonName }).ClickAsync();
     }

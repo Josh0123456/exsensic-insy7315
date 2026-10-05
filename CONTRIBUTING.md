@@ -1,7 +1,7 @@
 # Contributing to Exsensic — Team Rules (INSY7315 Task 2)
 
 **Due: Monday 5 October 2026.** Feature freeze: **Saturday 3 October, 23:59.**
-**Repo:** https://github.com/Josh0123456/exsensic-insy7315 · **Staging:** `<url>` · **Production:** `<url>`
+**Repo:** https://github.com/Josh0123456/exsensic-insy7315 · **Staging:** https://app-exsensic-web-staging.azurewebsites.net · **Production:** https://app-exsensic-web.azurewebsites.net
 
 Read sections 1–5 before your first commit. Then open your card in `Exsensic_Part2_Team_Plan.pdf`.
 

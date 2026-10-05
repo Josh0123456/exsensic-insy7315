@@ -344,8 +344,8 @@ Examples: <!-- add links -->[a feature pull request](https://github.com/Josh0123
 | [docs/CONTRACTS.md §12](docs/CONTRACTS.md#12-decisions-that-change-the-part-1-design) | Decisions that change the Part 1 design |
 | [docs/architecture.md](docs/architecture.md) | Layers, State and Observer patterns, booking-creation sequence, error handling |
 | [docs/operations.md](docs/operations.md) | Azure resources, settings, deployment, rollback, logs and limits |
-| docs/security.md | OWASP Top 10 mapping, auth flow and security tests *(in progress)* |
-| docs/accessibility.md | Accessibility and responsive testing evidence *(in progress)* |
+| docs/security.md | OWASP Top 10 mapping, auth flow, database integrity rules and security tests |
+| docs/accessibility.md | Accessibility and responsive testing evidence |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Team rules: ownership, branching and commit format |
 
 ## Demo video and presentation

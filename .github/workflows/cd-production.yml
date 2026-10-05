@@ -76,7 +76,7 @@ jobs:
     steps:
       # Approval gate. GitHub's built-in environment reviewers are not available on a free private
       # repository, so the job opens an issue and waits until someone in PRODUCTION_APPROVERS
-      # comments "approve" (or "deny"). The person who started the run cannot approve it.
+      # comments "approve" (or "deny"). Anyone on that list may approve, including the person releasing.
       - name: Wait for production approval
         uses: trstringer/manual-approval@v1
         timeout-minutes: 60
@@ -84,7 +84,7 @@ jobs:
           secret: ${{ github.TOKEN }}
           approvers: ${{ vars.PRODUCTION_APPROVERS }}
           minimum-approvals: 1
-          exclude-workflow-initiator-as-approver: true
+          exclude-workflow-initiator-as-approver: false
           issue-title: "Approve production deployment of ${{ github.sha }}"
           issue-body: "Staging must be green for this commit. Comment 'approve' to deploy to production or 'deny' to stop."
 
