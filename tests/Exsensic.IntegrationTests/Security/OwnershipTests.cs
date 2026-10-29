@@ -57,6 +57,19 @@ public sealed class OwnershipTests(BookingApiFactory api) : IClassFixture<Bookin
     }
 
     [Fact]
+    public async Task UnassignedStaff_GetAnotherStaffMembersBooking_Returns404()
+    {
+        var (_, clientId) = await api.CreateSignedInClientAsync();
+        var (_, assignedStaffId) = await api.CreateSignedInClientAsync(RoleNames.Staff);
+        var (otherStaff, _) = await api.CreateSignedInClientAsync(RoleNames.Staff);
+        var bookingId = await api.AddBookingInDatabaseAsync(clientId, api.NextFutureDate(), new TimeOnly(9, 0), assignedStaffId);
+
+        var response = await otherStaff.GetAsync($"/api/v1/bookings/{bookingId}");
+
+        await AssertProblemAsync(response, HttpStatusCode.NotFound, "not_found");
+    }
+
+    [Fact]
     public async Task UnassignedStaff_CompleteBooking_Returns404()
     {
         var (_, clientId) = await api.CreateSignedInClientAsync();
