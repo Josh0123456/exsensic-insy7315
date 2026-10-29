@@ -4,6 +4,7 @@ using Exsensic.Contracts.Admin;
 using Exsensic.Contracts.Auth;
 using Exsensic.Contracts.Common;
 using Exsensic.Core.Entities;
+using Exsensic.Core.Exceptions;
 using Exsensic.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -120,10 +121,21 @@ public sealed class AdminUsersController : ControllerBase
 
     /// <summary>
     /// Activates or deactivates an account. Bumping the security stamp kills tokens issued before now.
+    /// An admin can't deactivate their own account (400 validation_failed).
     /// </summary>
     [HttpPut("{id:guid}/active")]
     public async Task<IActionResult> SetActive(Guid id, SetUserActiveRequest request, CancellationToken ct)
     {
+        // Least privilege: the seeder creates the only admin, so an admin who deactivates themselves
+        // could leave nobody able to manage the system.
+        if (!request.IsActive && id == User.GetUserId())
+        {
+            throw new RequestValidationException(new Dictionary<string, string[]>
+            {
+                ["IsActive"] = ["You can't deactivate your own account."]
+            });
+        }
+
         var user = await _users.FindByIdAsync(id.ToString());
         if (user is null)
         {
