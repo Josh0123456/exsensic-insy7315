@@ -79,6 +79,10 @@ older `repo:owner/name:ref:…` form fails with AADSTS700213.
    the same tests and publish, then the run **pauses and opens a GitHub issue**. A team member
    in `PRODUCTION_APPROVERS` (not the person who started it) comments `approve`; only then does
    it deploy to production and smoke-test it. `deny`, or no answer within 60 minutes, stops it.
+   If the release carries a new migration, first run `docs/task3/pre-migration-checks.sql`
+   against the production database (Azure portal → the database → Query editor); both rows must
+   say `PASS`, otherwise the API cannot start and the release stops. Run it for every release
+   that adds a unique index or narrows a column (docs/migrations.md).
    If the repository variable `PRODUCTION_SLOT_NAME` is set, each app is deployed to that slot,
    tested there and swapped into production instead (section 8).
 
@@ -140,8 +144,11 @@ Afterwards, check `/health/ready` on both apps and the smoke-test step in the ru
 - **Shared outbound IPs:** on the Basic tier the web apps' outbound IPs are shared with other
   Azure customers on the same scale unit, so the access restriction keeps the API off the open
   internet but is not a private network. Staging's web app could also reach the production API.
-- **No GitHub branch protection** on the free private repository: the review-before-merge rules
-  are kept by agreement (CONTRIBUTING.md) and are visible on every pull request.
+- **Branch protection** is on for `develop` and `main` (the repository is public, so it is free):
+  a pull request and a passing `build-test` and `pr-checks` are required, and force pushes and
+  deletion are blocked. Required approvals are not set, because the one person who merges would
+  block themselves; review is kept by agreement and by CODEOWNERS (CONTRIBUTING.md), and is
+  visible on every pull request.
 - **End-to-end tests create real bookings** on staging; the seeded slots (30 weekdays) cover the
   project's lifetime.
 
