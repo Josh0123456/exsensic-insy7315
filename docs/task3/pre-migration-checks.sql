@@ -1,5 +1,5 @@
--- Read-only checks to run against the STAGING database before patch 01
--- (migration AddBookingRelatedConstraintsAndIndexes) is merged and deployed.
+-- Read-only checks to run against the target database (staging, then production) before the
+-- migration AddBookingRelatedConstraintsAndIndexes is deployed to it.
 -- It only reads dbo.BookingRequirements. Every row must say PASS; otherwise stop and fix the data first.
 --
 -- Run in the Azure portal: SQL database -> Query editor, or:
