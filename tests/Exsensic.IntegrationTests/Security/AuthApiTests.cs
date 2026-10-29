@@ -87,6 +87,45 @@ public sealed class AuthApiTests(BookingApiFactory api) : IClassFixture<BookingA
         Assert.Contains("Email or password is incorrect", await response.Content.ReadAsStringAsync());
     }
 
+    /// <summary>The right password returns a token for the account's role.</summary>
+    [Fact]
+    public async Task Login_CorrectPassword_Returns200WithToken()
+    {
+        var request = NewRegistration();
+        await ClientWithIp("10.0.1.7").PostAsJsonAsync("/api/v1/auth/register", request);
+
+        var response = await ClientWithIp("10.0.1.8").PostAsJsonAsync("/api/v1/auth/login",
+            new LoginRequest(request.Email, request.Password));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+        Assert.False(string.IsNullOrEmpty(auth!.AccessToken));
+        Assert.Equal(RoleNames.Client, auth.Role);
+    }
+
+    /// <summary>
+    /// Five wrong passwords lock the account, so even the right password is refused afterwards, with the
+    /// same generic 401. The attempts come from different IPs, so this is the lockout and not the rate limit.
+    /// </summary>
+    [Fact]
+    public async Task Login_AfterFiveWrongPasswords_AccountIsLockedOut()
+    {
+        var request = NewRegistration();
+        await ClientWithIp("10.0.1.9").PostAsJsonAsync("/api/v1/auth/register", request);
+        for (var i = 0; i < 5; i++)
+        {
+            var wrong = await ClientWithIp($"10.0.2.{i + 1}").PostAsJsonAsync("/api/v1/auth/login",
+                new LoginRequest(request.Email, "WrongPassword123"));
+            Assert.Equal(HttpStatusCode.Unauthorized, wrong.StatusCode);
+        }
+
+        var response = await ClientWithIp("10.0.2.10").PostAsJsonAsync("/api/v1/auth/login",
+            new LoginRequest(request.Email, request.Password));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Contains("Email or password is incorrect", await response.Content.ReadAsStringAsync());
+    }
+
     /// <summary>Six login attempts in a minute from one IP are rate limited.</summary>
     [Fact]
     public async Task Login_SixthAttemptInMinute_Returns429WithRetryAfter()
