@@ -73,7 +73,8 @@ public sealed class AdminUsersController : ControllerBase
 
     /// <summary>
     /// Creates a Staff account with a profile and service links. Returns 201 with the new user's id.
-    /// A duplicate email is a 409 with the code "duplicate".
+    /// A duplicate email is a 409 with the code "duplicate". A password that breaks the Identity policy is a
+    /// 400 with the reasons against the Password field.
     /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateStaff(CreateStaffRequest request, CancellationToken ct)
@@ -88,6 +89,15 @@ public sealed class AdminUsersController : ControllerBase
         };
 
         var result = await _users.CreateAsync(user, request.Password);
+        // Identity reports every failure the same way; only a duplicate email or user name is a conflict.
+        if (!result.Succeeded && !result.Errors.Any(e => e.Code.StartsWith("Duplicate", StringComparison.Ordinal)))
+        {
+            throw new RequestValidationException(new Dictionary<string, string[]>
+            {
+                [nameof(request.Password)] = result.Errors.Select(e => e.Description).ToArray()
+            });
+        }
+
         if (!result.Succeeded)
         {
             return Conflict(new ProblemDetails
