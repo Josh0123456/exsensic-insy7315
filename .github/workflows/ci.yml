@@ -119,7 +119,7 @@ jobs:
       # The repository is private without GitHub push protection, so CI scans the whole
       # history for committed passwords, keys and connection strings instead.
       - name: Scan for committed secrets
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Report in the job log and summary only; commenting on PRs needs write access.
