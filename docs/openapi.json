@@ -622,8 +622,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "201": {
+            "description": "Created. The Location header points at the new service."
           },
           "401": {
             "description": "unauthenticated: no token, or an expired or invalid one.",
@@ -712,8 +712,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No content: the service was updated."
           },
           "401": {
             "description": "unauthenticated: no token, or an expired or invalid one.",
@@ -812,8 +812,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No content: the service was archived or restored."
           },
           "401": {
             "description": "unauthenticated: no token, or an expired or invalid one.",
@@ -1089,8 +1089,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No content: the slot was blocked."
           },
           "401": {
             "description": "unauthenticated: no token, or an expired or invalid one.",
@@ -1169,8 +1169,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No content: the slot was unblocked."
           },
           "401": {
             "description": "unauthenticated: no token, or an expired or invalid one.",
@@ -1229,8 +1229,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No content: the slot was deleted."
           },
           "401": {
             "description": "unauthenticated: no token, or an expired or invalid one.",
@@ -1413,8 +1413,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "201": {
+            "description": "Created. The body holds the new user\u0027s id."
           },
           "401": {
             "description": "unauthenticated: no token, or an expired or invalid one.",
@@ -1502,8 +1502,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No content: the account was activated or deactivated."
           },
           "401": {
             "description": "unauthenticated: no token, or an expired or invalid one.",

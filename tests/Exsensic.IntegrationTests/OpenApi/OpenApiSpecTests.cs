@@ -245,6 +245,32 @@ public sealed class OpenApiSpecTests(BookingApiFactory api) : IClassFixture<Book
         }
     }
 
+    [Fact]
+    public async Task Spec_SuccessCodes_MatchWhatTheCreateAndUpdateRoutesReturn()
+    {
+        var spec = await GenerateSpecAsync();
+
+        // Each status is asserted against the real API by AdminCatalogueTests, AdminCreateStaffTests and AdminSelfLockoutTests.
+        var expected = new Dictionary<string, string>
+        {
+            ["POST /api/v1/admin/services"] = "201",
+            ["PUT /api/v1/admin/services/{id}"] = "204",
+            ["PUT /api/v1/admin/services/{id}/active"] = "204",
+            ["PUT /api/v1/admin/timeslots/{id}/block"] = "204",
+            ["PUT /api/v1/admin/timeslots/{id}/unblock"] = "204",
+            ["DELETE /api/v1/admin/timeslots/{id}"] = "204",
+            ["POST /api/v1/admin/users"] = "201",
+            ["PUT /api/v1/admin/users/{id}/active"] = "204",
+        };
+
+        var operations = Operations(spec).ToDictionary(o => o.Key, o => o.Value);
+        foreach (var (key, status) in expected)
+        {
+            Assert.True(HasResponse(operations[key], status), $"{key} must document {status}.");
+            Assert.False(HasResponse(operations[key], "200"), $"{key} must not document a 200.");
+        }
+    }
+
     private static bool HasResponse(JsonObject operation, string status) => operation["responses"]?[status] is not null;
 
     /// <summary>A real URL for a templated path: ids become 1, or an empty guid for the user routes.</summary>

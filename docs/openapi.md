@@ -74,7 +74,7 @@ PowerShell: `$env:EXSENSIC_UPDATE_OPENAPI = "true"` first, and remove it afterwa
   schema): 401 where a token is needed, 403 where a role or policy is needed, 400 where there is a body or
   query string, 404 where there is an id, 409 with the exact codes that operation can return, and 429 on the
   three rate-limited operations. Any operation can also return 500 `server_error`. An operation lists only
-  the errors it can really return.
+  the errors it can really return. Success statuses are the real ones too: 201 for the two create routes and 204 for the update, block, unblock, delete and activate routes.
 
 ## For Josh (hosting)
 

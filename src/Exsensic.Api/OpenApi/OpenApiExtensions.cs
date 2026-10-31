@@ -46,6 +46,22 @@ public static class OpenApiExtensions
     };
 
     /// <summary>
+    /// The success status of actions that return a bare result (<c>IActionResult</c>), which the generator can only
+    /// describe as 200. Keyed by controller and action; each status is asserted by an existing integration test.
+    /// </summary>
+    private static readonly Dictionary<string, (int Status, string Description)> SuccessStatuses = new()
+    {
+        ["AdminServices.Create"] = (201, "Created. The Location header points at the new service."),
+        ["AdminServices.Update"] = (204, "No content: the service was updated."),
+        ["AdminServices.SetActive"] = (204, "No content: the service was archived or restored."),
+        ["AdminTimeSlots.Block"] = (204, "No content: the slot was blocked."),
+        ["AdminTimeSlots.Unblock"] = (204, "No content: the slot was unblocked."),
+        ["AdminTimeSlots.Delete"] = (204, "No content: the slot was deleted."),
+        ["AdminUsers.CreateStaff"] = (201, "Created. The body holds the new user's id."),
+        ["AdminUsers.SetActive"] = (204, "No content: the account was activated or deactivated."),
+    };
+
+    /// <summary>
     /// Registers the OpenAPI document generator with the Exsensic title, the bearer scheme, a security
     /// requirement on every operation that doesn't allow anonymous access, and the error responses.
     /// </summary>
@@ -123,6 +139,13 @@ public static class OpenApiExtensions
     {
         var document = context.Document!;
         operation.Responses ??= [];
+
+        if (context.Description.ActionDescriptor is ControllerActionDescriptor created
+            && SuccessStatuses.TryGetValue($"{created.ControllerName}.{created.ActionName}", out var success))
+        {
+            operation.Responses.Remove("200");
+            operation.Responses[success.Status.ToString()] = new OpenApiResponse { Description = success.Description };
+        }
 
         if (secured)
         {
