@@ -2,7 +2,7 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Exsensic API",
-    "description": "Booking API for Exsensic. Errors are RFC 9457 ProblemDetails with a \u0022code\u0022 and a \u0022traceId\u0022 (docs/CONTRACTS.md section 7). Sign in with POST /api/v1/auth/login and send the token as \u0022Authorization: Bearer \u003Ctoken\u003E\u0022.",
+    "description": "Booking API for Exsensic. Errors are RFC 9457 ProblemDetails with a \u0022code\u0022 and a \u0022traceId\u0022 (docs/CONTRACTS.md section 7). Any operation can also return 500 server_error. Sign in with POST /api/v1/auth/login and send the token as \u0022Authorization: Bearer \u003Ctoken\u003E\u0022.",
     "version": "v1"
   },
   "paths": {
@@ -29,6 +29,26 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DashboardDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -126,6 +146,36 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -210,6 +260,36 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -274,6 +354,56 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BookingDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: invalid_transition, concurrency_conflict, staff_unavailable.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -344,6 +474,56 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: invalid_transition, concurrency_conflict.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -388,6 +568,26 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -424,6 +624,46 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: duplicate.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -474,6 +714,56 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: duplicate.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -524,6 +814,56 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: concurrency_conflict.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -586,6 +926,36 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -641,6 +1011,36 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -691,6 +1091,56 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: slot_has_booking, concurrency_conflict.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -721,6 +1171,36 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -751,6 +1231,46 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: slot_has_booking.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -829,6 +1349,36 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -865,6 +1415,46 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: duplicate.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -914,6 +1504,46 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -968,6 +1598,36 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: duplicate.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited: too many requests. The Retry-After header says when to try again.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         }
       }
@@ -1014,6 +1674,26 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited: too many requests. The Retry-After header says when to try again.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -1064,6 +1744,56 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BookingCreatedDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: slot_unavailable.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited: too many requests. The Retry-After header says when to try again.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -1145,6 +1875,36 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1189,6 +1949,26 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BookingDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -1259,6 +2039,56 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: slot_unavailable, invalid_transition, concurrency_conflict.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1326,6 +2156,56 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: invalid_transition, concurrency_conflict, cancel_window_closed.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1358,6 +2238,16 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProfileDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -1414,6 +2304,26 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1458,6 +2368,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1488,6 +2408,26 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1531,6 +2471,16 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RequirementTemplateDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -1613,6 +2563,16 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         }
       }
@@ -1679,6 +2639,26 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         }
       }
@@ -1733,6 +2713,36 @@
                   "items": {
                     "$ref": "#/components/schemas/BookingSummaryDto"
                   }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
                 }
               }
             }
@@ -1803,6 +2813,56 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "unauthenticated: no token, or an expired or invalid one.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: signed in, but the wrong role for this operation.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_failed: invalid input. The body lists the fields at fault.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: it doesn\u0027t exist, or (for a booking) it isn\u0027t yours.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict. Code: invalid_transition, concurrency_conflict.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1815,6 +2875,43 @@
   },
   "components": {
     "schemas": {
+      "ApiProblem": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "A stable, machine-readable error code, for example slot_unavailable."
+          },
+          "traceId": {
+            "type": "string",
+            "description": "Quote this when reporting a problem; it links to the server log."
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Only on validation_failed: the messages for each field."
+          }
+        },
+        "description": "An RFC 9457 ProblemDetails error. The \u0022code\u0022 values are listed in docs/CONTRACTS.md section 7."
+      },
       "AuthResponse": {
         "required": [
           "accessToken",

@@ -137,6 +137,131 @@ public sealed class OpenApiSpecTests(BookingApiFactory api) : IClassFixture<Book
         Assert.Equal(HttpStatusCode.NotFound, asAdmin.StatusCode);
     }
 
+    [Fact]
+    public async Task Spec_ErrorResponses_AllUseTheSharedProblemSchema()
+    {
+        var spec = await GenerateSpecAsync();
+
+        var problem = spec["components"]!["schemas"]!["ApiProblem"]!["properties"]!.AsObject();
+        Assert.NotNull(problem["code"]);
+        Assert.NotNull(problem["traceId"]);
+
+        var errorResponses = Operations(spec)
+            .SelectMany(o => ((JsonObject)o.Value["responses"]!).Where(r => !r.Key.StartsWith('2')).Select(r => (o.Key, r.Key, Response: (JsonObject)r.Value!)))
+            .ToList();
+        Assert.NotEmpty(errorResponses);
+        Assert.All(errorResponses, e =>
+            Assert.Equal("#/components/schemas/ApiProblem", e.Response["content"]!["application/problem+json"]!["schema"]!["$ref"]!.GetValue<string>()));
+    }
+
+    [Fact]
+    public async Task Spec_SecuredOperations_Document401AndOnlyThose()
+    {
+        var spec = await GenerateSpecAsync();
+
+        Assert.All(Operations(spec), o =>
+        {
+            var secured = (o.Value["security"] as JsonArray)?.Count > 0;
+            Assert.Equal(secured, HasResponse(o.Value, "401"));
+        });
+    }
+
+    [Fact]
+    public async Task Spec_RoleRestrictedOperations_Document403AndOnlyThose()
+    {
+        var spec = await GenerateSpecAsync();
+
+        Assert.All(Operations(spec), o =>
+        {
+            var access = o.Value["description"]?.GetValue<string>() ?? string.Empty;
+            var restricted = access.Contains("Access: role", StringComparison.Ordinal) || access.Contains("Access: policy", StringComparison.Ordinal);
+            Assert.True(restricted == HasResponse(o.Value, "403"), $"{o.Key}: 403 must be documented exactly when a role or policy is required.");
+        });
+    }
+
+    [Fact]
+    public async Task Spec_RateLimitedOperations_Document429AndOnlyThose()
+    {
+        var spec = await GenerateSpecAsync();
+
+        var documented = Operations(spec).Where(o => HasResponse(o.Value, "429")).Select(o => o.Key).Order().ToArray();
+
+        // The three policies in docs/CONTRACTS.md section 2.
+        Assert.Equal(["POST /api/v1/auth/login", "POST /api/v1/auth/register", "POST /api/v1/bookings"], documented);
+    }
+
+    [Fact]
+    public async Task Spec_ConflictResponses_ListTheCodesEachOperationCanReturn()
+    {
+        var spec = await GenerateSpecAsync();
+
+        var expected = new Dictionary<string, string[]>
+        {
+            ["POST /api/v1/auth/register"] = ["duplicate"],
+            ["POST /api/v1/bookings"] = ["slot_unavailable"],
+            ["PUT /api/v1/bookings/{id}/reschedule"] = ["slot_unavailable", "invalid_transition", "concurrency_conflict"],
+            ["PUT /api/v1/bookings/{id}/cancel"] = ["invalid_transition", "concurrency_conflict", "cancel_window_closed"],
+            ["PUT /api/v1/admin/bookings/{id}/confirm"] = ["invalid_transition", "concurrency_conflict", "staff_unavailable"],
+            ["PUT /api/v1/admin/bookings/{id}/reject"] = ["invalid_transition", "concurrency_conflict"],
+            ["PUT /api/v1/staff/bookings/{id}/complete"] = ["invalid_transition", "concurrency_conflict"],
+            ["POST /api/v1/admin/services"] = ["duplicate"],
+            ["PUT /api/v1/admin/services/{id}"] = ["duplicate"],
+            ["PUT /api/v1/admin/services/{id}/active"] = ["concurrency_conflict"],
+            ["PUT /api/v1/admin/timeslots/{id}/block"] = ["slot_has_booking", "concurrency_conflict"],
+            ["DELETE /api/v1/admin/timeslots/{id}"] = ["slot_has_booking"],
+            ["POST /api/v1/admin/users"] = ["duplicate"],
+        };
+
+        var documented = Operations(spec).Where(o => HasResponse(o.Value, "409")).ToDictionary(o => o.Key, o => o.Value);
+        Assert.Equal(expected.Keys.Order(), documented.Keys.Order());
+        foreach (var (key, codes) in expected)
+        {
+            var text = documented[key]["responses"]!["409"]!["description"]!.GetValue<string>();
+            Assert.All(codes, code => Assert.Contains(code, text));
+        }
+    }
+
+    [Fact]
+    public async Task Spec_DocumentedErrors_MatchWhatTheRealApiReturns()
+    {
+        var spec = await GenerateSpecAsync();
+        var (client, _) = await api.CreateSignedInClientAsync();
+
+        foreach (var (key, operation) in Operations(spec))
+        {
+            var (method, path) = (key.Split(' ')[0], RealPath(key.Split(' ')[1]));
+
+            if (HasResponse(operation, "401"))
+            {
+                var anonymous = await Send(api.CreateAnonymousClient(), method, path);
+                Assert.True(anonymous.StatusCode == HttpStatusCode.Unauthorized, $"{key} documents 401 but anonymous got {(int)anonymous.StatusCode}.");
+            }
+
+            if ((operation["description"]?.GetValue<string>() ?? string.Empty).Contains("policy AdminOnly", StringComparison.Ordinal))
+            {
+                var forbidden = await Send(client, method, path);
+                Assert.True(forbidden.StatusCode == HttpStatusCode.Forbidden, $"{key} documents 403 for non-admins but a client got {(int)forbidden.StatusCode}.");
+            }
+        }
+    }
+
+    private static bool HasResponse(JsonObject operation, string status) => operation["responses"]?[status] is not null;
+
+    /// <summary>A real URL for a templated path: ids become 1, or an empty guid for the user routes.</summary>
+    private static string RealPath(string template) =>
+        System.Text.RegularExpressions.Regex.Replace(template, @"\{\w+\}", template.Contains("/users/", StringComparison.Ordinal) ? Guid.Empty.ToString() : "1");
+
+    private static Task<HttpResponseMessage> Send(HttpClient client, string method, string path)
+    {
+        var request = new HttpRequestMessage(new HttpMethod(method), path);
+        if (method is "POST" or "PUT")
+        {
+            request.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+        }
+
+        return client.SendAsync(request);
+    }
+
     private static readonly System.Text.Json.JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     /// <summary>Builds the document from the running app, the way the live endpoint would, without a request.</summary>
