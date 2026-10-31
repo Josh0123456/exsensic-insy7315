@@ -54,6 +54,8 @@ Prices are the Azure retail list prices read on 2026-10-29. At US$0.022 per hour
 
 **Decision.** B1 stays the standing tier. The Task 2 marker suggested slots and autoscaling; both need Standard or above. A seven-day S1 window costs about US$21, which is more than the US$20 monthly budget alert, so it needs the team's and the subscription owner's agreement first. Instead of buying it, the release pipeline was built to support slots (7.4), and the switch-on and switch-back steps are documented in operations.md section 8. The limitation is stated honestly: on B1 a deploy briefly restarts the app.
 
+**Azure rather than AWS.** Part 1 contained AWS costing research alongside Azure deployment material. Part 2 standardised on Azure for three reasons: the system is .NET end to end and App Service runs ASP.NET Core without containers to manage; GitHub Actions signs in to Azure with a managed identity instead of stored passwords; and the Azure SQL free offer keeps both databases at no cost. The AWS figures were research, not a built system, so this is a design decision, not a correction.
+
 ## 7.3 Continuous integration
 
 Four workflows live in `.github/workflows/`.
@@ -97,14 +99,25 @@ The issue-based approval gives the same "a second person approves" control as Gi
 | Swap the slots back (slot releases only) | A slot release passed its checks but misbehaves |
 | Fix forward with a new migration, or restore the 7-day backup | The database changed; migrations never move backwards |
 
+**If a production deployment fails:** the run goes red at the failing step and the temporary access rule is always removed. On a direct deploy the new version is already live when the smoke test fails, so re-run the last green production run or revert the merge (table above). On a slot release a failing slot test stops the run before the swap, so production keeps serving the old version. Check `/health/ready` on both apps afterwards.
+
 ## 7.7 Task 3 changes
 
-| Task 2 feedback | What was done |
+Each entry has four parts: the earlier feedback, the change made, how it was verified, and what it means for Exsensic's users.
+
+| # | Earlier feedback | Change made | Verification | Client impact |
+|---|---|---|---|---|
+| 1 | Hosting stability 14/15: "slots/autoscaling suggested" | Costed tier decision (7.2); `cd-production` made slot-aware behind `PRODUCTION_SLOT_NAME` (PR #51); switch-on and switch-back steps in operations.md section 8 | Release run with the variable empty deploys as before; slot run is documented, not performed (see the status table below) | A release can be swapped in without restarting the live app, once the team approves the extra cost |
+| 2 | CI/CD 19/20 | Fixed a failing restore caused by a vulnerable transitive package: `System.Security.Cryptography.Pkcs` pinned to 10.0.13 (PR #49); Dependabot backlog merged and duplicate pull requests closed | `ci` green on `develop`; `cd-staging` green after the merge | Vulnerable dependencies stop the pipeline before they reach users |
+| 3 | Git workflow 10/15: "uneven commit balance and compressed timeline" | Branch protection on `develop` and `main`; CODEOWNERS (PR #64); migration policy (PR #50, migrations.md) | Branch protection read back from the GitHub API on 2026-10-29: required checks `build-test` and `pr-checks`, force pushes and deletion blocked | Every change is reviewable and traceable to a pull request |
+| 4 | Safe releases (Task 3 audit) | Production pre-migration data check added to the release steps (PR #65) | `docs/task3/pre-migration-checks.sql` run against production before the release (record the date and both PASS results here) | A migration cannot take production down because of existing data |
+
+| Item | Status |
 |---|---|
-| Slots and autoscaling suggested (Hosting stability 14/15) | Costed decision recorded; `cd-production` made slot-aware behind `PRODUCTION_SLOT_NAME`; switch-on and switch-back steps documented (operations.md section 8) |
-| CI/CD 19/20 | Fixed a failing restore caused by a vulnerable transitive package (`System.Security.Cryptography.Pkcs` pinned to 10.0.13); merged the Dependabot backlog and removed duplicate pull requests |
-| Uneven history, compressed timeline (Git workflow 10/15) | Branch protection enabled on `develop` and `main`; CODEOWNERS added; migration policy written (migrations.md) |
-| Safe releases | A production pre-migration data check is now a step before any release that adds a migration |
+| Slot-aware production pipeline | Completed (code merged); first production run happens with the release |
+| Slot and autoscale demonstration on S1 | **Evaluated option, not implemented** (cost above the monthly budget alert; needs the team's and the subscription owner's agreement) |
+| Branch protection, Pkcs pin, migration policy, pre-check step | Completed |
+| Required approvals on pull requests | Deferred: the single merger would block themselves |
 
 ## 7.8 Limitations
 
