@@ -142,7 +142,7 @@ Each change runs in one transaction (retried as a whole after a brief connection
 
 ## 5.7 Test evidence
 
-Run on `develop` after all the P2 pull requests below were merged: `dotnet build Exsensic.sln -c Release` gave 0 warnings and 0 errors; unit tests **110 passed**; integration tests **302 passed**; none failed or were skipped. CI runs the same suites against SQL Server 2022 in a container on every pull request.
+Run on `develop` after all the P2 pull requests below were merged: `dotnet build Exsensic.sln -c Release` gave 0 warnings and 0 errors; unit tests **110 passed**; integration tests **303 passed**; none failed or were skipped. CI runs the same suites against SQL Server 2022 in a container on every pull request.
 
 | Area | Where | Cases |
 |---|---|---|
@@ -155,7 +155,7 @@ Run on `develop` after all the P2 pull requests below were merged: `dotnet build
 | Races and transition evidence | `ConcurrentBookingTests`, `BookingTransitionEvidenceTests` | 2 + 10 |
 | Contract: roles, errors, `Location`, `429` | `ContractConsistencyTests` | 91 |
 | Error handling | `ProblemDetailsExceptionHandlerTests` | 11 |
-| OpenAPI matches the routes, auth rules and documented errors | `OpenApiSpecTests` | 14 |
+| OpenAPI matches the routes, auth rules and documented errors | `OpenApiSpecTests` | 15 |
 | Rules a coverage run showed were untested (requirement template route, staff list edges, empty staff id) | `BookingRuleGapTests` | 9 |
 | Re-approving a rescheduled booking, no double assignment | `RescheduleReapprovalTests` | 3 |
 
