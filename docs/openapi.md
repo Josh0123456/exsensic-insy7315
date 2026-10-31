@@ -36,6 +36,23 @@ and their attributes. `OpenApiSpecTests` (integration tests) then:
    file isn't updated, CI fails** with an "out of date" message.
 5. Checks the live spec endpoint is not served outside Development (404 for a signed-in admin, 401 or 404
    for an anonymous caller).
+6. Checks the documented errors: every error response uses the shared problem schema; 401 is documented
+   exactly on the secured operations, 403 exactly where a role or policy is required, 429 exactly on the
+   three rate-limited operations, and 409 on the listed operations with their codes. It also calls the real
+   API to confirm that every documented 401 happens for an anonymous caller and every admin-only 403
+   happens for a client.
+
+## Checked on the deployed sites (31 October 2026)
+
+Read-only requests to the four hosts. The spec is not served anywhere, and the API refuses all outside
+traffic (the IP restriction is unchanged).
+
+| Host | `/openapi/v1.json` | `/swagger/v1/swagger.json` | `/health` |
+|---|---|---|---|
+| Staging web | 404 | 404 | 200 |
+| Production web | 404 | 404 | 200 |
+| Staging API | 403 | 403 | 403 |
+| Production API | 403 | 403 | 403 |
 
 ## Updating the file
 
@@ -53,8 +70,11 @@ PowerShell: `$env:EXSENSIC_UPDATE_OPENAPI = "true"` first, and remove it afterwa
   operation the role or policy it needs ("Access: ...").
 - Leaves out: server URLs (the API's host and IP rules are not part of the contract), secrets, and any
   seed or demo account.
-- The spec does not yet list every error response (400, 401, 403, 404, 409, 429). Those are described in
-  CONTRACTS section 7 and are checked by the contract-consistency work.
+- Every operation's error responses, as ProblemDetails with a `code` and a `traceId` (shared `ApiProblem`
+  schema): 401 where a token is needed, 403 where a role or policy is needed, 400 where there is a body or
+  query string, 404 where there is an id, 409 with the exact codes that operation can return, and 429 on the
+  three rate-limited operations. Any operation can also return 500 `server_error`. An operation lists only
+  the errors it can really return.
 
 ## For Josh (hosting)
 

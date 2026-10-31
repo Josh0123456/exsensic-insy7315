@@ -51,6 +51,8 @@ If a step is refused, read the message aloud and say what it proves, for example
 
 **What happens to the slot when a booking is rejected, cancelled or completed?** Only Requested and Confirmed bookings hold a slot, so it is free again straight away.
 
+**What happens after a confirmed booking is rescheduled?** It goes back to Requested and keeps its staff member as a proposal. The admin sees that person offered again and re-approves; the history shows the whole round trip. A proposal does not count as the person being busy, only a Confirmed booking does, so nobody can be assigned to two overlapping Confirmed bookings. (We found and fixed a bug here while checking the journey in the Web pages.)
+
 **Why must the staff member be qualified and free?** Each service has the staff who can deliver it. The confirm list shows only qualified, free people, and the server checks again so two bookings can't send one person to two places.
 
 **What times are used?** Slot dates and times are South African time (UTC+2). Audit timestamps are stored in UTC.
@@ -65,11 +67,11 @@ If a step is refused, read the message aloud and say what it proves, for example
 
 **Is the API documented?** Yes. `docs/openapi.json` lists all 34 operations and is checked by tests against the real routes. It is a file in the repository, deliberately not an endpoint on the deployed API.
 
-**How do you know it works?** Unit tests (110) cover the status rules, and integration tests (284 in total) run the real API against SQL Server for the whole journey, the races and the error contract. CI runs them on every pull request. See chapter 5.
+**How do you know it works?** Unit tests (110) cover the status rules, and integration tests (302 in total) run the real API against SQL Server for the whole journey, the races and the error contract. We also drove the real Web pages through the same journey on a development machine (chapter 5, section 5.10). CI runs them on every pull request. See chapter 5.
 
-**What is not done or not proven?** Be direct: there is no load test; the end-to-end browser tests run against staging and are separate from the API tests; notifications are in-app only; the OpenAPI file does not yet list error responses; rejections share the Cancelled status, so counting them means filtering on the reason. (Full list: chapter 5, section 5.9.)
+**What is not done or not proven?** Be direct: there is no load test; the Web pages were checked by script rather than in a browser, and the end-to-end browser tests run against staging and are separate; notifications are in-app only; rejections share the Cancelled status, so counting them means filtering on the reason. (Full list: chapter 5, section 5.9.)
 
-**What would you do with more time?** A load test, email notifications through another observer (the pattern is built for it), a reschedule cut-off if the business wants one, and error responses in the API description.
+**What would you do with more time?** A load test, email notifications through another observer (the pattern is built for it), and a reschedule cut-off if the business wants one.
 
 ## 4. Code evidence, only if asked
 
@@ -94,7 +96,7 @@ Running the tests live is optional and slow (they start a database). If you do, 
 | Rate limits | Sign-in 5/min per IP, registration 3/min per IP, booking creation 10 per 10 min per user |
 | API size | 34 operations; 15 owned by P2 |
 | Error codes | `validation_failed`, `unauthenticated`, `forbidden`, `not_found`, `slot_unavailable`, `invalid_transition`, `concurrency_conflict`, `staff_unavailable`, `slot_has_booking`, `duplicate`, `cancel_window_closed`, `rate_limited`, `server_error` |
-| Tests (on `develop` after the P2 pull requests) | Unit 110 passed; integration 284 passed; build 0 warnings |
+| Tests (on `develop` after the P2 pull requests) | Unit 110 passed; integration 302 passed; build 0 warnings |
 | Pull requests | #67 published API description, #68 lifecycle and race tests, #69 error-code fix |
 
 Re-run the build and tests on the exact commit you present, and update the last row if the numbers changed.

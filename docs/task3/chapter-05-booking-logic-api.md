@@ -46,7 +46,7 @@ Every row was run through the real API against a real SQL Server database. The c
 | 12 | Stale `RowVersion` on confirm, complete, reschedule, cancel or reject | `409 concurrency_conflict` | Unchanged | `AdminBookingApiTests`, `StaffBookingApiTests`, `BookingChangeApiTests`, `...Cancel_StaleRowVersion_...`, `...Reject_StaleRowVersion_...` |
 | 13 | A cancel and a confirm race with the same `RowVersion` (5 repeats) | one `200`, one `409` | Stored status and history agree with the winner | `...CancelAndConfirm_SameRowVersion_...` |
 
-What these tests cannot show: how the screens look. Row 1 to 13 prove the API and the database, not the Web pages (see 5.9).
+Rows 1 to 13 prove the API and the database. What the Web pages show for the same journey was checked separately and is in section 5.10.
 
 ## 5.2 State and Observer design
 
@@ -142,7 +142,7 @@ Each change runs in one transaction (retried as a whole after a brief connection
 
 ## 5.7 Test evidence
 
-Run on `develop` after the three P2 pull requests were merged: `dotnet build Exsensic.sln -c Release` gave 0 warnings and 0 errors; unit tests **110 passed**; integration tests **284 passed**; none failed or were skipped. CI runs the same suites against SQL Server 2022 in a container on every pull request.
+Run on `develop` after all the P2 pull requests below were merged: `dotnet build Exsensic.sln -c Release` gave 0 warnings and 0 errors; unit tests **110 passed**; integration tests **302 passed**; none failed or were skipped. CI runs the same suites against SQL Server 2022 in a container on every pull request.
 
 | Area | Where | Cases |
 |---|---|---|
@@ -155,26 +155,60 @@ Run on `develop` after the three P2 pull requests were merged: `dotnet build Exs
 | Races and transition evidence | `ConcurrentBookingTests`, `BookingTransitionEvidenceTests` | 2 + 10 |
 | Contract: roles, errors, `Location`, `429` | `ContractConsistencyTests` | 91 |
 | Error handling | `ProblemDetailsExceptionHandlerTests` | 11 |
-| OpenAPI matches the routes | `OpenApiSpecTests` | 8 |
+| OpenAPI matches the routes, auth rules and documented errors | `OpenApiSpecTests` | 14 |
+| Rules a coverage run showed were untested (requirement template route, staff list edges, empty staff id) | `BookingRuleGapTests` | 9 |
+| Re-approving a rescheduled booking, no double assignment | `RescheduleReapprovalTests` | 3 |
 
 The table lists the runner's per-class counts, which are not meant to add up to the totals above.
 
 ## 5.8 Technical improvements made
 
-Three merged pull requests added the following during the improvement phase:
+These changes were made during the improvement phase:
 
 - **#67 Published API description** (`feat(api)`): the OpenAPI spec is generated from the real controllers with a bearer scheme and per-operation access, committed as `docs/openapi.json`, and checked by 8 tests that it matches the real routes and auth rules and contains no secrets. No spec endpoint is served outside Development (decision record in [openapi.md](../openapi.md)).
 - **#68 Lifecycle and race proof** (`test(booking)`): 10 new tests for history and notifications on reschedule and cancel, stale `RowVersion` on cancel and reject, and races on create, reschedule, confirm and confirm-versus-cancel. They found no bug in the booking engine.
 - **#69 Contract fix** (`fix(contract)`): the framework's `405` and `415` responses carried the code `server_error`, which the contract reserves for 500. They now use `validation_failed`. A 91-case sweep checks 401, 403, 404, 400, 405, 415, 201 and 429 across every route.
 
+- **#74 Error responses in the API description** (`feat(api)`): `openapi.json` now lists 401, 403, 400, 404, 409 and 429 on each operation, using a shared problem schema with `code` and `traceId`, and only where the operation can return them. Six more tests check this, including calls to the real API.
+- **Fix: empty staff id on confirm** (`fix(booking)`): a coverage run showed the requirement-template route had no test at all. Writing tests for the untested rules found a real bug: confirming a booking with an empty staff id returned **500 `server_error`**, because the booking's own guard threw an unhandled exception. It is now `400 validation_failed` naming the field, and the booking stays Requested. Nine tests cover this and the other untested rules.
+- **Fix: re-approving a rescheduled booking** (`fix(booking)`): found while checking the journey in the Web pages (5.10). A confirmed booking that is rescheduled goes back to Requested and keeps its staff member as a proposal, but the staff list treated that proposal as the person being busy. With one qualified staff member the admin was told "No available staff were returned" and could not re-approve from the page. Only a Confirmed booking now makes a staff member busy; double assignment is still refused. Three tests cover it.
+
 Documentation added: [state-observer-tradeoffs.md](../state-observer-tradeoffs.md) and [user-guide-staff.md](user-guide-staff.md).
 
 ## 5.9 Known gaps
 
-- **The Web screens are not covered here.** The evidence above proves the API and the database. The booking journey in the browser is covered by the end-to-end tests, which run against the deployed staging site rather than in pull-request CI; they were not run as part of this chapter.
+- **The Web pages were checked by script, not in a browser** (5.10): no JavaScript, visual or accessibility checking, and no screenshots. The browser tests in `cd-staging` run only when `E2E_ENABLED` is on and cover fewer flows (client books and admin confirms, staff completes).
 - **No load or performance testing** (5.6).
-- **The OpenAPI file does not yet list error responses** (400, 401, 403, 404, 409, 429). They are described in CONTRACTS section 7 and tested.
 - **Notifications are in-app only.** Email is a stretch goal (CONTRACTS decision 11), and old notifications are never deleted.
 - **`pageSize=0` returns one item per page**, not the default 20. The contract doesn't say what happens below 1, so this was left as is.
 - **Rejections share the `Cancelled` status.** A report that counts rejections must filter on the `"Rejected: "` prefix.
 - **Staff booking contact details** (name, email, phone) are visible to the assigned staff member by design; there is no automatic expiry of that access after completion.
+
+## 5.10 What the Web pages showed
+
+**Method (31 October 2026).** The API and the Web app were run on a development machine with a throwaway database and test-only accounts (not staging or production). The server-rendered pages were then driven by a script that behaves like a browser without JavaScript: it keeps the sign-in cookie, reads each page's antiforgery token, submits the real forms and reads the text the page returns. So the real controllers, views and API all took part, and every result below is what the page displayed after reloading stored data.
+
+**Not a real browser.** The built-in browser would not load the local site because its certificate is self-signed, and trusting a certificate is a security setting that was not changed. So there are no screenshots, and nothing here tests JavaScript, layout or accessibility. The end-to-end tests in `cd-staging` are separate (5.9). The same scenario can be repeated by hand using the staff guide and the run sheet.
+
+| # | Step | What the page showed |
+|---|---|---|
+| 1 | Admin dashboard on the sample data | Requested 2, Confirmed 3, Completed 1, Cancelled 1, matching the stored bookings |
+| 2 | Admin opens a Requested booking | Requirements, client contact and a staff list with only the qualified, free person |
+| 3 | Admin confirms with no staff chosen | Page shown again with "Please choose a staff member."; booking still Requested; no server error |
+| 4 | Admin confirms with the offered person | Status Confirmed, staff named, a history row added |
+| 5 | Admin rejects with no reason, then with a reason | First refused with a message; then Cancelled with the reason shown |
+| 6 | The two clients open their bookings | Client A: Confirmed plus a "confirmed" notification. Client B: Cancelled, the reason, and a notification giving the reason |
+| 7 | Client B opens Client A's booking address | "Not found" page (404), not the booking |
+| 8 | Staff schedule | The started booking this week and the confirmed one next week; the future booking has no "Mark as completed"; another staff member's booking gives "Not found" |
+| 9 | Staff completes the started booking | "The booking has been marked as completed"; Completed; history row; the client's notification says it is complete |
+| 10 | Staff submits the same completion again from the old page | "Someone else changed this record..." and a "Review the latest booking" page; nothing changed |
+| 11 | Client reschedules a Confirmed booking | Back to Requested; the history shows the move; the assigned staff member is notified |
+| 12 | Client submits a second reschedule from the old page | "This page is out of date. Reload and review the latest booking..." |
+| 13 | Client cancels a Confirmed booking more than 24 hours away | Cancelled with the reason; the assigned staff member is notified |
+| 14 | Cut-off: a slot for tomorrow was created on the admin Time Slots page, booked, and confirmed; the client then tried to cancel | "The cancellation deadline has passed. Please contact the team for help."; still Confirmed. The clock was not changed |
+| 15 | Two clients choose the same slot in the booking wizard | The first reaches the confirmation page; the second gets "That time is no longer available. Please choose another time." and no booking is made |
+| 16 | A client opens the admin or staff pages; a staff member opens the admin pages | "Access denied" (403) |
+| 17 | A sixth sign-in within a minute | "Please wait at least 60 seconds before trying again." |
+| 18 | Admin opens the booking rescheduled in step 11 | **Defect found:** "No available staff were returned" although the staff member was free. After the fix the person is offered, the admin re-approves from the page, and the history shows Requested, Confirmed, Requested (moved) and Confirmed |
+
+Steps 1 to 17 passed on the first run. Step 18 is the defect described in 5.8, found by this check and fixed with tests.
