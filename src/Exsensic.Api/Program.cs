@@ -1,5 +1,6 @@
 using Exsensic.Api.Errors;
 using Exsensic.Api.Hosting;
+using Exsensic.Api.OpenApi;
 using Exsensic.Api.Security;
 using Exsensic.Core.Catalog;
 using Exsensic.Data;
@@ -27,8 +28,8 @@ builder.Services.AddExsensicErrorHandling();
 builder.Services.AddExsensicBookingApi(builder.Configuration);
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// OpenAPI (Daniel): the document is generated from the real controllers and published as docs/openapi.json.
+builder.Services.AddExsensicOpenApi();
 
 var app = builder.Build();
 
@@ -41,7 +42,8 @@ app.UseExsensicHosting();
 // Error handling (Daniel): straight after hosting, so it catches exceptions from everything below.
 app.UseExsensicErrorHandling();
 
-// Configure the HTTP request pipeline.
+// The live /openapi/v1.json endpoint exists in Development only. Everywhere else the spec is the committed
+// docs/openapi.json (docs/openapi.md), so no deployed API serves it anonymously.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi().AllowAnonymous();
