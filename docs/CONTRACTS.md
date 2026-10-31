@@ -201,6 +201,9 @@ Every error is RFC 9457 **ProblemDetails** with a `code` extension and a `traceI
 | 429 | `rate_limited` | Too many requests. `Retry-After` header set |
 | 500 | `server_error` | Unexpected. Generic message only; details in the logs |
 
+`server_error` is only for 5xx. The few other client errors the framework raises on its own keep their own
+status (`405` wrong HTTP method, `406`, `413`, `415` body is not JSON) and use the code `validation_failed`.
+
 ---
 
 ## 8. MVC routes (Exsensic.Web)
