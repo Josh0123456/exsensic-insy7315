@@ -114,7 +114,8 @@ Each entry has four parts: the earlier feedback, the change made, how it was ver
 
 | Item | Status |
 |---|---|
-| Slot-aware production pipeline | Completed (code merged); first production run happens with the release |
+| Slot-aware production pipeline | Completed (code merged and used in the v1.1.0 release, direct deploy path; the slot swap path was not exercised) |
+| Production release v1.1.0 | Completed: PR #90, run 41297454238, approval issue #91, commit `cf6171c` |
 | Slot and autoscale demonstration on S1 | **Evaluated option, not implemented** (cost above the monthly budget alert; needs the team's and the subscription owner's agreement) |
 | Branch protection, Pkcs pin, migration policy, pre-check step | Completed |
 | Required approvals on pull requests | Deferred: the single merger would block themselves |
@@ -125,7 +126,7 @@ Each entry has four parts: the earlier feedback, the change made, how it was ver
 - The free-offer database pauses when idle; the first request after a quiet period can take up to about a minute. Open the site a minute or two before a demo.
 - The web apps' outbound IPs are shared with other Azure customers on the same scale unit, so the API allow-list keeps it off the open internet but is not a private network.
 - End-to-end tests create real bookings on staging.
-- Not yet done: the first production run of the slot-aware pipeline happens with the release that carries it; the slot demonstration itself is a documented option, not a standing feature.
+- Not done: the slot swap path has not been exercised. The v1.1.0 release ran the slot-aware pipeline on its direct deploy path (the slot variable is unset), and the slot demonstration itself is a documented option, not a standing feature.
 
 ## 7.9 Evidence to attach
 
