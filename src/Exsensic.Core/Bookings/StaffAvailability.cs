@@ -7,7 +7,7 @@ namespace Exsensic.Core.Bookings;
 
 /// <summary>
 /// Which staff members can deliver a booking: qualified for the service (a StaffServices link,
-/// docs/CONTRACTS.md §12 decision 7) and free at that time (no other Requested or Confirmed booking whose
+/// docs/CONTRACTS.md §12 decision 7) and free at that time (no other Confirmed booking whose
 /// slot overlaps). Shared by the staff options list and by Confirm, so both apply exactly the same rule.
 /// </summary>
 internal static class StaffAvailability
@@ -22,7 +22,9 @@ internal static class StaffAvailability
             .ToListAsync(ct);
 
     /// <summary>
-    /// The staff members who already have a Requested or Confirmed booking overlapping the slot's time.
+    /// The staff members who already have a Confirmed booking overlapping the slot's time. A Requested booking may
+    /// still carry a proposed staff member (a confirmed booking that was rescheduled keeps them), but that doesn't
+    /// commit them, so it doesn't count: otherwise the admin couldn't re-approve the booking with the same person.
     /// Two slots overlap when each starts before the other ends.
     /// </summary>
     /// <param name="db">The database context.</param>
@@ -38,7 +40,7 @@ internal static class StaffAvailability
         var busy = await db.Bookings.AsNoTracking()
             .Where(b => b.StaffUserId != null
                 && b.Id != exceptBookingId
-                && (b.Status == BookingStatus.Requested || b.Status == BookingStatus.Confirmed)
+                && b.Status == BookingStatus.Confirmed
                 && b.TimeSlot.SlotDate == date
                 && b.TimeSlot.StartTime < end
                 && start < b.TimeSlot.EndTime)

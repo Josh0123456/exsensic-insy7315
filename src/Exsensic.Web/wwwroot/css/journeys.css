@@ -140,3 +140,7 @@ input, select, textarea, button { max-width: 100%; }
     :focus-visible { outline: 3px solid Highlight; }
     .status-badge, .date-choice[aria-pressed="true"], .slot-choice:has(input:checked) { border: 2px solid ButtonText; }
 }
+
+/* One visible, polite announcement for full-page actions; no motion required. */
+.action-status:not(:empty) { padding: var(--space-16); margin-bottom: var(--space-16); border: 1px solid var(--brand); border-radius: var(--radius-medium); color: var(--ink); background: var(--surface); overflow-wrap: anywhere; }
+[data-filter-navigation][aria-busy="true"] a { cursor: progress; opacity: .75; }

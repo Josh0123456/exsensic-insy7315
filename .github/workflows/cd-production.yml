@@ -27,6 +27,8 @@ env:
   WEB_APP_NAME: ${{ vars.PRODUCTION_WEB_APP_NAME || 'app-exsensic-web' }}
   API_APP_NAME: ${{ vars.PRODUCTION_API_APP_NAME || 'app-exsensic-api' }}
   RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP || 'rg-exsensic-insy7315' }}
+  # Set PRODUCTION_SLOT_NAME to deploy through a slot swap (see the deploy job); empty deploys directly.
+  SLOT_NAME: ${{ vars.PRODUCTION_SLOT_NAME || '' }}
 
 jobs:
   build:
@@ -34,10 +36,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up .NET from global.json
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -52,14 +54,14 @@ jobs:
         run: dotnet publish src/Exsensic.Api/Exsensic.Api.csproj --configuration Release --output publish/api
 
       - name: Upload web artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web
           path: publish/web
           retention-days: 14
 
       - name: Upload API artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api
           path: publish/api
@@ -89,13 +91,13 @@ jobs:
           issue-body: "Staging must be green for this commit. Comment 'approve' to deploy to production or 'deny' to stop."
 
       - name: Download web artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: web
           path: web
 
       - name: Download API artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: api
           path: api
@@ -109,38 +111,13 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # The API goes first so the new web app never calls an older API.
-      - name: Deploy API to production
-        id: deploy-api
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ env.API_APP_NAME }}
-          package: api
-          startup-command: dotnet Exsensic.Api.dll
-
-      - name: Deploy web app to production
-        id: deploy-web
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ env.WEB_APP_NAME }}
-          package: web
-          startup-command: dotnet Exsensic.Web.dll
-
-      # The apps restart after a deployment, so allow up to about 5 minutes for them to answer.
-      # /health/ready on the API also proves it can reach its database (step 10).
-      # The API only accepts traffic from its web app's outbound IPs (step 14, docs/operations.md).
-      # Let this runner in just long enough to smoke-test the API, then remove the rule.
-      - name: Allow this runner through the API access restriction
+      # Optional zero-downtime release (needs an App Service plan on the Standard tier or above).
+      # When the repository variable PRODUCTION_SLOT_NAME is set (for example "staging"), each app is
+      # deployed to that slot, smoke-tested there and only then swapped into production. A failed
+      # test never reaches users. Left empty, the apps are deployed straight to production as before.
+      - name: Define the smoke-test helper
         run: |
-          runner_ip=$(curl --silent --fail https://api.ipify.org)
-          az webapp config access-restriction add --resource-group "$RESOURCE_GROUP" --name "$API_APP_NAME"             --rule-name github-smoke-test --action Allow --ip-address "$runner_ip/32" --priority 50 --output none
-          sleep 20
-
-      - name: Smoke test production
-        env:
-          API_URL: ${{ steps.deploy-api.outputs.webapp-url }}
-          WEB_URL: ${{ steps.deploy-web.outputs.webapp-url }}
-        run: |
+          cat > "$RUNNER_TEMP/check.sh" <<'SCRIPT'
           check() {
             for attempt in $(seq 1 20); do
               status=$(curl --silent --location --output /dev/null --write-out "%{http_code}" --max-time 30 "$1" || true)
@@ -154,16 +131,79 @@ jobs:
             echo "::error::$1 did not return 200 after deployment."
             return 1
           }
+          SCRIPT
+
+      # The API goes first so the new web app never calls an older API.
+      - name: Deploy API to production
+        id: deploy-api
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.API_APP_NAME }}
+          slot-name: ${{ env.SLOT_NAME }}
+          package: api
+          startup-command: dotnet Exsensic.Api.dll
+
+      # The apps restart after a deployment, so allow up to about 5 minutes for them to answer.
+      # /health/ready on the API also proves it can reach its database (step 10).
+      # The API only accepts traffic from its web app's outbound IPs (step 14, docs/operations.md).
+      # Let this runner in just long enough to smoke-test the API, then remove the rule.
+      # Access restrictions belong to the slot and are not swapped, so the rule is added to and removed from the slot.
+      - name: Allow this runner through the API access restriction
+        run: |
+          runner_ip=$(curl --silent --fail https://api.ipify.org)
+          az webapp config access-restriction add --resource-group "$RESOURCE_GROUP" --name "$API_APP_NAME" ${SLOT_NAME:+--slot "$SLOT_NAME"} \
+            --rule-name github-smoke-test --action Allow --ip-address "$runner_ip/32" --priority 50 --output none
+          sleep 20
+
+      - name: Smoke test API
+        env:
+          API_URL: ${{ steps.deploy-api.outputs.webapp-url }}
+        run: |
+          source "$RUNNER_TEMP/check.sh"
           check "$API_URL/health"
           check "$API_URL/health/ready"
+
+      - name: Swap API slot into production
+        if: env.SLOT_NAME != ''
+        run: az webapp deployment slot swap --resource-group "$RESOURCE_GROUP" --name "$API_APP_NAME" --slot "$SLOT_NAME" --target-slot production
+
+      - name: Deploy web app to production
+        id: deploy-web
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.WEB_APP_NAME }}
+          slot-name: ${{ env.SLOT_NAME }}
+          package: web
+          startup-command: dotnet Exsensic.Web.dll
+
+      - name: Smoke test web app
+        env:
+          WEB_URL: ${{ steps.deploy-web.outputs.webapp-url }}
+        run: |
+          source "$RUNNER_TEMP/check.sh"
           check "$WEB_URL/health"
           check "$WEB_URL/"
+
+      - name: Swap web slot into production
+        if: env.SLOT_NAME != ''
+        run: az webapp deployment slot swap --resource-group "$RESOURCE_GROUP" --name "$WEB_APP_NAME" --slot "$SLOT_NAME" --target-slot production
+
+      # A swap is symmetric, so swapping again puts the previous version straight back.
+      - name: Verify production after the swap, swap back on failure
+        if: env.SLOT_NAME != ''
+        run: |
+          source "$RUNNER_TEMP/check.sh"
+          if ! { check "https://$WEB_APP_NAME.azurewebsites.net/health" && check "https://$WEB_APP_NAME.azurewebsites.net/"; }; then
+            az webapp deployment slot swap --resource-group "$RESOURCE_GROUP" --name "$WEB_APP_NAME" --slot "$SLOT_NAME" --target-slot production
+            echo "::error::Production failed its checks after the swap; the previous web version was restored."
+            exit 1
+          fi
 
       - name: Remove the runner from the API access restriction
         if: always()
         run: >
           az webapp config access-restriction remove --resource-group "$RESOURCE_GROUP"
-          --name "$API_APP_NAME" --rule-name github-smoke-test --output none || true
+          --name "$API_APP_NAME" ${SLOT_NAME:+--slot "$SLOT_NAME"} --rule-name github-smoke-test --output none || true
 
       - name: Write deployment summary
         if: always()

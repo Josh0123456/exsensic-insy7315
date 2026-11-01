@@ -79,6 +79,12 @@ older `repo:owner/name:ref:…` form fails with AADSTS700213.
    the same tests and publish, then the run **pauses and opens a GitHub issue**. A team member
    in `PRODUCTION_APPROVERS` (not the person who started it) comments `approve`; only then does
    it deploy to production and smoke-test it. `deny`, or no answer within 60 minutes, stops it.
+   If the release carries a new migration, first run `docs/task3/pre-migration-checks.sql`
+   against the production database (Azure portal → the database → Query editor); both rows must
+   say `PASS`, otherwise the API cannot start and the release stops. Run it for every release
+   that adds a unique index or narrows a column (docs/migrations.md).
+   If the repository variable `PRODUCTION_SLOT_NAME` is set, each app is deployed to that slot,
+   tested there and swapped into production instead (section 8).
 
 Why an issue and not GitHub's built-in environment reviewers: those need a paid plan on a
 private repository. The issue gate gives the same "a second person approves" control.
@@ -113,7 +119,7 @@ Afterwards, check `/health/ready` on both apps and the smoke-test step in the ru
 
 ## 6. Cost and access
 
-- **Cost:** only the B1 plan is paid, about US$13/month for all four apps; both databases use
+- **Cost:** only the B1 plan is paid, about US$16/month for all four apps (US$0.022 per hour list price); both databases use
   the free offer; the deploy identity and settings are free. Budget alert: set by the subscription
   owner on the resource group (US$20/month, email at 80%).
 - **Azure access:** Owner on the resource group is granted through Privileged Identity
@@ -129,15 +135,71 @@ Afterwards, check `/health/ready` on both apps and the smoke-test step in the ru
 ## 7. Known limitations
 
 - **B1 tier:** one small machine shared by four apps; slower under load.
-- **No deployment slots** (they need Standard tier), so a deploy briefly restarts the app
-  instead of swapping in a warmed-up copy.
+- **No deployment slots on B1** (they need Standard tier), so a deploy briefly restarts the app
+  instead of swapping in a warmed-up copy. The pipeline supports slots; the decision, cost and
+  set-up steps are in section 8.
 - **Cold starts:** the free-offer database pauses when idle and takes up to about a minute to
   resume, so the first request after a quiet period can time out. **Open the site a minute or
   two before a demo** to wake it. Keeping it awake permanently would use up the free allowance.
 - **Shared outbound IPs:** on the Basic tier the web apps' outbound IPs are shared with other
   Azure customers on the same scale unit, so the access restriction keeps the API off the open
   internet but is not a private network. Staging's web app could also reach the production API.
-- **No GitHub branch protection** on the free private repository: the review-before-merge rules
-  are kept by agreement (CONTRIBUTING.md) and are visible on every pull request.
+- **Branch protection** is on for `develop` and `main` (the repository is public, so it is free):
+  a pull request and a passing `build-test` and `pr-checks` are required, and force pushes and
+  deletion are blocked. Required approvals are not set, because the one person who merges would
+  block themselves; review is kept by agreement and by CODEOWNERS (CONTRIBUTING.md), and is
+  visible on every pull request.
 - **End-to-end tests create real bookings** on staging; the seeded slots (30 weekdays) cover the
   project's lifetime.
+
+## 8. Deployment slots and autoscaling
+
+The Task 2 marker suggested adding deployment slots and autoscaling. Both need a paid tier above
+B1, so this section records the options, the cost and how to switch them on.
+
+**Decision.** B1 stays the standing tier. The release pipeline already supports slots, so they can
+be shown during a short, approved upgrade window and then removed. Nothing is bought without the
+team's agreement.
+
+| Plan tier | Deployment slots | Autoscale | List price (UAE North, Linux) | Per day |
+|---|---|---|---|---|
+| B1 (now) | none | no (manual scale-out only) | US$0.022 per hour | about US$0.53 |
+| S1 | up to 5 | yes | US$0.125 per hour | about US$3.00 |
+| P0v3 | up to 20 | yes | US$0.0955 per hour | about US$2.29 |
+
+Prices are the Azure retail list prices for Azure App Service in UAE North, read from the Azure
+retail prices API on 2026-10-29, and are billed per hour for the whole plan (all four apps). A
+seven-day S1 window is about US$21 in total. That is more than the US$20 monthly budget alert
+(section 6), so tell the subscription owner before starting.
+
+**Switching slots on (one release, then switch back)**
+
+1. **Scale up.** Azure portal → `asp-exsensic` → **Scale up** → S1. The web apps' outbound IP
+   addresses can change when the tier changes, and the API only accepts those addresses
+   (section 6). Compare each web app's **possible outbound IP addresses** with the
+   `web-outbound-*` rules on both API apps and update any that differ, before releasing.
+2. **Create a slot called `staging`** on each production app, copying the production settings:
+   `az webapp deployment slot create --resource-group rg-exsensic-insy7315 --name app-exsensic-api --slot staging --configuration-source app-exsensic-api`,
+   and the same for `app-exsensic-web`. Check the new API slot has the same access restriction
+   rules, because they belong to the slot and are not swapped.
+3. **Set the repository variable** `PRODUCTION_SLOT_NAME` to `staging` (Settings → Secrets and
+   variables → Actions → Variables).
+4. **Release as normal.** `cd-production` waits for approval, deploys the API to its slot,
+   smoke-tests it, swaps it into production, then does the same for the web app. If production
+   fails its checks after the web swap, the pipeline swaps the previous web version back.
+5. **Autoscale (optional).** Azure portal → `asp-exsensic` → **Scale out** → custom autoscale:
+   add one instance when average CPU is above 70% for 10 minutes, remove one when it is below 30%,
+   minimum 1, maximum 2.
+6. **Switch back.** Clear `PRODUCTION_SLOT_NAME`, delete both `staging` slots, then scale the
+   plan down to B1. A plan with slots cannot be scaled down to B1 until its slots are gone.
+
+**Things to know**
+
+- The API slot starts against the production database, so pending migrations are applied when
+  the slot starts, before the swap. Migrations only move forward and must keep working with the
+  version still in production (docs/migrations.md).
+- To undo a slot release by hand, swap again: `az webapp deployment slot swap --resource-group
+  rg-exsensic-insy7315 --name <app> --slot staging --target-slot production`. Both apps may need
+  it, the web app first.
+- Evidence to keep for the report: the plan before and after, the slot list, the pipeline run
+  with the swap steps, and the swap-back rehearsal, with the subscription ID redacted.

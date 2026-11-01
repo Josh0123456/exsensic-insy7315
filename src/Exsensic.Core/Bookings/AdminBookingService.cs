@@ -46,6 +46,7 @@ public sealed class AdminBookingService
     /// <param name="request">The staff member to assign and the RowVersion the admin last saw.</param>
     /// <param name="adminUserId">The admin approving the booking.</param>
     /// <param name="ct">Cancelled if the request is aborted.</param>
+    /// <exception cref="RequestValidationException">No staff member was chosen (an empty id).</exception>
     /// <exception cref="InvalidBookingTransitionException">The booking isn't Requested.</exception>
     /// <exception cref="StaffUnavailableException">The staff member isn't qualified, active or free at that time.</exception>
     /// <exception cref="ConcurrencyConflictException">The booking changed since the admin loaded it.</exception>
@@ -53,6 +54,17 @@ public sealed class AdminBookingService
     {
         ArgumentNullException.ThrowIfNull(request);
         var expectedVersion = BookingRules.DecodeRowVersion(request.RowVersion);
+
+        // An empty id passes the [Required] check (a Guid is never null), so refuse it here as bad input
+        // instead of letting the booking's own guard throw an unhandled exception (a 500).
+        if (request.StaffUserId == Guid.Empty)
+        {
+            throw new RequestValidationException(new Dictionary<string, string[]>
+            {
+                [nameof(request.StaffUserId)] = ["Please choose a staff member."],
+            });
+        }
+
         var nowUtc = _timeProvider.GetUtcNow();
 
         await BookingRules.ChangeAsync(_db, _dispatcher, bookingId, expectedVersion, async (booking, token) =>

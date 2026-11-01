@@ -234,7 +234,7 @@ public sealed class ServiceCatalogService(IAppDbContext db, TimeProvider timePro
     }
 
     /// <summary>
-    /// Blocks a slot with a reason.
+    /// Blocks a slot with a reason, only if it has no active booking.
     /// </summary>
     public async Task BlockSlotAsync(int id, string reason, string rowVersion, CancellationToken ct)
     {
@@ -245,6 +245,12 @@ public sealed class ServiceCatalogService(IAppDbContext db, TimeProvider timePro
         if (!slot.RowVersion.AsSpan().SequenceEqual(expected))
         {
             throw new ConcurrencyConflictException();
+        }
+
+        // A blocked slot with a live booking would leave the client holding an appointment nobody can deliver.
+        if (await HasActiveBookingAsync(id, ct))
+        {
+            throw new BusinessRuleException(ErrorCodes.SlotHasBooking, "This slot has an active booking and can't be blocked.");
         }
 
         slot.IsBlocked = true;
@@ -273,10 +279,7 @@ public sealed class ServiceCatalogService(IAppDbContext db, TimeProvider timePro
         var slot = await db.TimeSlots.FirstOrDefaultAsync(t => t.Id == id, ct)
             ?? throw new NotFoundException("Time slot");
 
-        var hasActive = await db.Bookings.AnyAsync(b => b.TimeSlotId == id
-            && (b.Status == BookingStatus.Requested || b.Status == BookingStatus.Confirmed), ct);
-
-        if (hasActive)
+        if (await HasActiveBookingAsync(id, ct))
         {
             throw new BusinessRuleException(ErrorCodes.SlotHasBooking, "This slot has an active booking and can't be deleted.");
         }
@@ -284,6 +287,10 @@ public sealed class ServiceCatalogService(IAppDbContext db, TimeProvider timePro
         db.TimeSlots.Remove(slot);
         await db.SaveChangesAsync(ct);
     }
+
+    private Task<bool> HasActiveBookingAsync(int slotId, CancellationToken ct) =>
+        db.Bookings.AnyAsync(b => b.TimeSlotId == slotId
+            && (b.Status == BookingStatus.Requested || b.Status == BookingStatus.Confirmed), ct);
 
     private static ServiceDto ToDto(int id, string name, ServiceCategory category, string description,
         int durationMinutes, decimal? basePrice, bool isActive, byte[] rowVersion) =>

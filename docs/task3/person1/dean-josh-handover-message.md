@@ -1,0 +1,7 @@
+Hi Dean and Josh — I have kept my Task 3 changes within Person 1's frontend/docs ownership. Two external checks need your attention:
+
+1. CI run 40671793733 (28 October) fails during restore with NU1902/NU1903 for System.Security.Cryptography.Pkcs 9.0.11. The chain is Data → EF Core SqlServer 10.0.12 → SqlClient 6.1.6 → Pkcs 9.0.11. Dean: please review an explicit patched Pkcs 9.0.21 reference in Exsensic.Data.csproj, or an approved parent dependency upgrade, then verify resolution and current vulnerability results. Josh: please validate the Release/tests and GitHub CI. Please retain audit warnings and warnings-as-errors.
+
+2. Staging run 37319256633 is from 5 October: 6 E2E tests passed, but StaffCompletes_SeededPastBooking timed out finding today's Confirmed EXS-TODAY card. Please inspect its trace and check the latest staging deployment, Staff account, SAST date/week, seed execution, booking status/assignment and elapsed slot. Make fixture preparation repeatable; don't just increase the timeout or skip the test. Local 7/7 success does not clear staging.
+
+I haven't changed dependencies, backend, database, existing E2E tests, workflows or Azure. Details, affected paths, exact errors and acceptance steps are in docs/task3/person1/ci-staging-handover.md. Please send back the corrected revision and successful GitHub run links when resolved; I will keep CI marked failed/pending until then.

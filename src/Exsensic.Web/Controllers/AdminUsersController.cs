@@ -98,7 +98,9 @@ public sealed class AdminUsersController : Controller
         }
         else
         {
-            TempData[ToastKeys.Error] = result.Error?.Message ?? "Could not change the user.";
+            // The list has no form fields to highlight, so show the API's own reason (e.g. self-deactivation).
+            TempData[ToastKeys.Error] = result.Error?.FieldErrors.Values.SelectMany(m => m).FirstOrDefault()
+                ?? result.Error?.Message ?? "Could not change the user.";
         }
 
         return RedirectToAction(nameof(Index));
