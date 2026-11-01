@@ -61,14 +61,19 @@ public static class ErrorHandlingExtensions
     /// <summary>
     /// The default error code for a status when no exception supplied one (docs/CONTRACTS.md §7).
     /// </summary>
+    /// <remarks>
+    /// "server_error" is only for 5xx. Any other client error the framework produces on its own, such as
+    /// 405 (wrong HTTP method) or 415 (body is not JSON), is a bad request and uses "validation_failed",
+    /// so a client never mistakes its own mistake for a fault on our side.
+    /// </remarks>
     /// <param name="status">The HTTP status code of the response.</param>
     public static string CodeForStatus(int status) => status switch
     {
-        StatusCodes.Status400BadRequest => ErrorCodes.ValidationFailed,
         StatusCodes.Status401Unauthorized => ErrorCodes.Unauthenticated,
         StatusCodes.Status403Forbidden => ErrorCodes.Forbidden,
         StatusCodes.Status404NotFound => ErrorCodes.NotFound,
         StatusCodes.Status429TooManyRequests => ErrorCodes.RateLimited,
+        >= 400 and < 500 => ErrorCodes.ValidationFailed,
         _ => ErrorCodes.ServerError,
     };
 }

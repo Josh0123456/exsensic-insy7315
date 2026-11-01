@@ -12,6 +12,14 @@ src/Exsensic.Core/Bookings/ @ST10446445
 # Data and Core entities: Dean
 src/Exsensic.Data/ @SibleyDean
 src/Exsensic.Core/Entities/ @SibleyDean
+# API security, catalogue and admin controllers, security tests and security doc: Dean
+src/Exsensic.Api/Security/ @SibleyDean
+src/Exsensic.Api/Controllers/Admin*.cs @SibleyDean
+src/Exsensic.Api/Controllers/Services*.cs @SibleyDean
+tests/Exsensic.IntegrationTests/Security/ @SibleyDean
+docs/security.md @SibleyDean
+# Admin bookings API: Daniel (the Admin*.cs line above would otherwise claim it)
+src/Exsensic.Api/Controllers/AdminBookingsController.cs @ST10446445
 # Workflows, hosting and README: Josh
 .github/ @Josh0123456
 README.md @Josh0123456

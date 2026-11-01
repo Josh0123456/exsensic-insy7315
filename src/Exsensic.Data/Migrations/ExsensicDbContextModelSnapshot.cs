@@ -105,7 +105,8 @@ namespace Exsensic.Data.Migrations
 
                     b.Property<string>("FieldKey")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("FieldValue")
                         .IsRequired()
@@ -113,7 +114,8 @@ namespace Exsensic.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BookingId");
+                    b.HasIndex("BookingId", "FieldKey")
+                        .IsUnique();
 
                     b.ToTable("BookingRequirements");
                 });
@@ -146,9 +148,9 @@ namespace Exsensic.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BookingId");
+                    b.HasIndex("BookingId", "ChangedAtUtc");
 
-                    b.ToTable("BookingStatusHistory");
+                    b.ToTable("BookingStatusHistory", (string)null);
                 });
 
             modelBuilder.Entity("Exsensic.Core.Entities.ClientProfile", b =>
@@ -199,6 +201,8 @@ namespace Exsensic.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IsRead");
 
                     b.ToTable("Notifications");
                 });
