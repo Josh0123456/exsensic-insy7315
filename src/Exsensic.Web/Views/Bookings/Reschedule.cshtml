@@ -9,7 +9,7 @@
 }
 @if (Model.IntegrationAvailable)
 {
-    <nav class="component-actions" aria-label="Reschedule dates">
+    <nav class="component-actions" data-filter-navigation data-busy-label="Loading available dates…" aria-label="Reschedule dates">
         <a class="button-secondary" asp-action="Reschedule" asp-route-id="@Model.Id" asp-route-from="@Model.From.AddDays(-14).ToString("yyyy-MM-dd")">Earlier dates</a>
         <a class="button-secondary" asp-action="Reschedule" asp-route-id="@Model.Id" asp-route-from="@Model.From.AddDays(14).ToString("yyyy-MM-dd")">Show later dates</a>
     </nav>

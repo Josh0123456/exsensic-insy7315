@@ -4,7 +4,7 @@
 <partial name="_JourneyFeedback" model="Model" />
 @if (Model.IntegrationAvailable)
 {
-    <nav class="filter-chips" aria-label="Service categories">
+    <nav class="filter-chips" data-filter-navigation data-busy-label="Loading services…" aria-label="Service categories">
         <a asp-action="Index" aria-current="@(string.IsNullOrEmpty(Model.Category) ? "page" : null)">All services</a>
         @foreach (var category in Model.Categories)
         {

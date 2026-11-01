@@ -1,3 +1,14 @@
+# Task 3 final verification — 28 October 2026
+
+## Latest external check status
+
+A later forced uncached restore FAILED on Pkcs 9.0.11 (NU1902/NU1903). The referenced GitHub CI run is still failed; local green results below are earlier execution evidence only. The October 5 staging fixture failure requires latest-deployment verification. See [owner handover](task3/person1/ci-staging-handover.md), [verification summary](task3/person1/evidence/verification-summary.md) and [commit inventory](task3/person1/commit-inventory.md). Person 1 is ready for review with external checks blocked, not merge-ready.
+
+Final local verification on 28 October: 7/7 existing E2E tests passed after installing their required Chromium runtime. Existing seed settings were found in user secrets and used only in process memory. The normal API initialiser populated its configured local demo records; no migrations were applied. An additional Web-owned audit passed 80 populated page/width inspections and 10 interactions across Client, Staff and Admin, including real creation, reschedule/cancellation, cancel-dialog Escape/focus return, keyboard Requested/week navigation and admin POST filtering. A second 40-case public audit passed with real catalogue data; the first 40-case API-failure audit is retained separately. Commit-safe evidence is in task3/person1/evidence/verification-summary.md and the public/filter JSON files. Private/raw records remain outside the repository. No production resources were touched.
+
+Human NVDA/Narrator acceptance, exact original Part 1 wording, remaining keyboard/edge-case checks and EXPO rehearsal remain pending. No fresh Lighthouse/axe score is claimed. See [Task 3 completion report](task3/person1/completion-report.md), [responsive matrix](task3/person1/responsive-test-matrix.md), [traceability](task3/person1/requirements-traceability.md) and [human checklist](task3/person1/accessibility-manual-test-checklist.md). Admin Services, Time Slots and Users now exist and remain Dean-owned. Everything below is the historical October 4 record and does not override this final Task 3 evidence.
+
+---
 # Accessibility and responsive review — Person 1
 
 Inspection and implementation date: **4 October 2026 (SAST)**. Baseline: `develop`, `c76e25a`. This is an evidence record, not a WCAG certification or a claim that every authenticated journey passed browser testing.

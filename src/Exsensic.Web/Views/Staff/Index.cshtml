@@ -1,7 +1,7 @@
 @model Exsensic.Web.Models.Staff.StaffScheduleViewModel
 @{ ViewData["Title"] = "Your schedule"; }
 <partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Your week, ready to create.", Eyebrow = "Staff workspace", Subtitle = $"{Model.WeekStart:d MMM} – {Model.WeekStart.AddDays(6):d MMM yyyy}" })' />
-<nav class="component-actions" aria-label="Schedule weeks">
+<nav class="component-actions" data-filter-navigation data-busy-label="Loading schedule…" aria-label="Schedule weeks">
     <a class="button-secondary" asp-action="Index" asp-route-week="@Model.WeekStart.AddDays(-7).ToString("yyyy-MM-dd")">Previous week</a>
     <a class="button-secondary" asp-action="Index">This week</a>
     <a class="button-secondary" asp-action="Index" asp-route-week="@Model.WeekStart.AddDays(7).ToString("yyyy-MM-dd")">Next week</a>
