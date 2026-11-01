@@ -109,9 +109,9 @@
             form.querySelectorAll("button[type=submit]").forEach((button) => {
                 buttonContents.set(button, [...button.childNodes]);
                 button.setAttribute("aria-disabled", "true");
-                button.textContent = "Please wait…";
+                button.textContent = form.dataset.busyLabel || "Please wait…";
             });
-            document.getElementById("action-status").textContent = "Submitting your request. Please wait.";
+            document.getElementById("action-status").textContent = form.dataset.busyLabel || "Submitting your request. Please wait.";
         });
     });
     window.addEventListener("pageshow", () => {
@@ -124,6 +124,59 @@
                 buttonContents.delete(button);
             });
         });
+    });
+    // Full-page filter navigation keeps native URLs, keyboard activation and history.
+    // Modified clicks still open a new tab. The current control stays focusable.
+    const filterTimers = new WeakMap();
+    function resetFilter(group) {
+        clearTimeout(filterTimers.get(group));
+        delete group.dataset.navigating;
+        group.removeAttribute("aria-busy");
+        group.querySelectorAll("a").forEach(link => link.removeAttribute("aria-disabled"));
+    }
+    document.addEventListener("click", event => {
+        const link = event.target.closest("[data-filter-navigation] a[href]");
+        if (!link || event.defaultPrevented || event.button !== 0
+            || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
+            || link.target || link.hasAttribute("download")) return;
+        const group = link.closest("[data-filter-navigation]");
+        if (group.dataset.navigating === "true") { event.preventDefault(); return; }
+        if (new URL(link.href).origin !== location.origin) return;
+        group.dataset.navigating = "true";
+        group.setAttribute("aria-busy", "true");
+        group.querySelectorAll("a").forEach(item => item.setAttribute("aria-disabled", "true"));
+        document.getElementById("action-status").textContent = group.dataset.busyLabel || "Loading filtered results…";
+        // A failed or abandoned navigation must not leave this document locked.
+        filterTimers.set(group, setTimeout(() => {
+            resetFilter(group);
+            document.getElementById("action-status").textContent = "If the page has not changed, you can try the filter again.";
+        }, 90000));
+    });
+    window.addEventListener("pageshow", () => {
+        document.querySelectorAll("[data-filter-navigation]").forEach(resetFilter);
+        document.querySelectorAll("[data-filter-form]").forEach(form => clearTimeout(filterTimers.get(form)));
+        document.getElementById("action-status").textContent = "";
+    });
+    document.querySelectorAll("form[data-filter-form]").forEach(form => {
+        form.addEventListener("submit", event => {
+            queueMicrotask(() => {
+                if (event.defaultPrevented) return;
+                clearTimeout(filterTimers.get(form));
+                filterTimers.set(form, setTimeout(() => {
+                    delete form.dataset.submitting;
+                    form.removeAttribute("aria-busy");
+                    form.querySelectorAll("button[type=submit]").forEach(button => {
+                        button.removeAttribute("aria-disabled");
+                        if (buttonContents.has(button)) button.replaceChildren(...buttonContents.get(button));
+                        buttonContents.delete(button);
+                    });
+                    document.getElementById("action-status").textContent = "If the page has not changed, you can apply the filters again.";
+                }, 90000));
+            });
+        });
+    });
+    window.addEventListener("pagehide", () => {
+        document.querySelectorAll("[data-filter-form], [data-filter-navigation]").forEach(group => clearTimeout(filterTimers.get(group)));
     });
     // Honor a server retry window without automatically repeating any mutation.
     const retrySeconds = Number(document.querySelector("[data-retry-seconds]")?.dataset.retrySeconds || 0);

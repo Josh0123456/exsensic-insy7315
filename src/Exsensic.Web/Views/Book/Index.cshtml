@@ -5,7 +5,7 @@
 <partial name="_JourneyFeedback" model="Model" />
 @if (Model.IntegrationAvailable)
 {
-    <nav class="component-actions" aria-label="Availability dates">
+    <nav class="component-actions" data-filter-navigation data-busy-label="Loading available dates…" aria-label="Availability dates">
         <a class="button-secondary" asp-action="Index" asp-route-serviceId="@Model.ServiceId" asp-route-from="@Model.From.AddDays(-14).ToString("yyyy-MM-dd")">Earlier dates</a>
         <span>@Model.From.ToString("d MMM") – @Model.From.AddDays(13).ToString("d MMM yyyy")</span>
         <a class="button-secondary" asp-action="Index" asp-route-serviceId="@Model.ServiceId" asp-route-from="@Model.From.AddDays(14).ToString("yyyy-MM-dd")">Show later dates</a>

@@ -1,7 +1,7 @@
 @model Exsensic.Web.Models.Admin.AdminBookingListViewModel
 @{ ViewData["Title"] = "Manage bookings"; }
 <partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Every booking, in view.", Eyebrow = "Admin bookings", Subtitle = "Filter requests and open a booking to review its details." })' />
-<form asp-action="FilterBookings" method="post" class="filter-form" aria-label="Booking filters">
+<form asp-action="FilterBookings" method="post" class="filter-form" data-single-submit data-filter-form data-busy-label="Applying filters…" aria-label="Booking filters">
     <div class="form-field"><label asp-for="Status">Status</label><select asp-for="Status"><option value="">All statuses</option>@foreach (var status in new[] { "Requested", "Confirmed", "Completed", "Cancelled" }) { <option value="@status">@status</option> }</select><span asp-validation-for="Status" class="field-error"></span></div>
     <div class="form-field"><label asp-for="From">From date</label><input asp-for="From" type="date" aria-describedby="From-error" /><span asp-validation-for="From" id="From-error" class="field-error"></span></div>
     <div class="form-field"><label asp-for="To">To date</label><input asp-for="To" type="date" aria-describedby="To-error" /><span asp-validation-for="To" id="To-error" class="field-error"></span></div>

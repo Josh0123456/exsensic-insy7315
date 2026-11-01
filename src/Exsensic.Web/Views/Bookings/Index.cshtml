@@ -1,7 +1,7 @@
 @model Exsensic.Web.Models.Bookings.BookingListViewModel
 @{ ViewData["Title"] = "My bookings"; }
 <partial name="_PageHeader" model='@(new PageHeaderViewModel { Title = "Your projects, in motion.", Eyebrow = "My bookings", Subtitle = "Follow your requests from the first idea to the finished work.", ActionText = "Book a service", ActionUrl = Url.Action("Index", "Services") })' />
-<nav class="filter-chips" aria-label="Booking filters">
+<nav class="filter-chips" data-filter-navigation data-busy-label="Loading bookings…" aria-label="Booking filters">
 @foreach (var filter in new[] { "Upcoming", "Requested", "Confirmed", "Past", "Cancelled" })
 {
     <a asp-action="Index" asp-route-filter="@filter" aria-current="@(Model.Filter == filter ? "page" : null)">@filter</a>

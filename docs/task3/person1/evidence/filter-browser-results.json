@@ -1,0 +1,53 @@
+{
+  "type": "isolated DOM regression; no backend data or authentication",
+  "checks": [
+    {
+      "name": "formBusy",
+      "result": "PASS"
+    },
+    {
+      "name": "label",
+      "result": "PASS"
+    },
+    {
+      "name": "value",
+      "result": "PASS"
+    },
+    {
+      "name": "repeat",
+      "result": "PASS"
+    },
+    {
+      "name": "history",
+      "result": "PASS"
+    },
+    {
+      "name": "changedValue",
+      "result": "PASS"
+    },
+    {
+      "name": "recovery",
+      "result": "PASS"
+    },
+    {
+      "name": "modified",
+      "result": "PASS"
+    },
+    {
+      "name": "linkBusy",
+      "result": "PASS"
+    },
+    {
+      "name": "linkRepeat",
+      "result": "PASS"
+    },
+    {
+      "name": "linkHistory",
+      "result": "PASS"
+    },
+    {
+      "name": "validation",
+      "result": "PASS"
+    }
+  ]
+}
