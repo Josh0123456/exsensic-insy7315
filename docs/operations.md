@@ -119,7 +119,7 @@ Afterwards, check `/health/ready` on both apps and the smoke-test step in the ru
 
 ## 6. Cost and access
 
-- **Cost:** only the B1 plan is paid, about US$13/month for all four apps; both databases use
+- **Cost:** only the B1 plan is paid, about US$16/month for all four apps (US$0.022 per hour list price); both databases use
   the free offer; the deploy identity and settings are free. Budget alert: set by the subscription
   owner on the resource group (US$20/month, email at 80%).
 - **Azure access:** Owner on the resource group is granted through Privileged Identity
