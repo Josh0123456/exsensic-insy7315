@@ -216,8 +216,8 @@ Status is never shown by colour alone: every badge also shows the status word.
 App Service runs ASP.NET Core with no containers to manage, and GitHub Actions deploys to it with a
 managed identity instead of stored passwords.
 
-**Why one B1 plan (hosting option 1).** Four apps on one Basic plan cost about **US$13 a month**; both
-databases use the **free offer**, so the whole system runs for about **US$13–15 a month**
+**Why one B1 plan (hosting option 1).** Four apps on one Basic plan cost about **US$16 a month**; both
+databases use the **free offer**, so the whole system runs for about **US$16 a month**
 ([Azure pricing calculator](https://azure.microsoft.com/pricing/calculator/)). The trade-offs, accepted
 on purpose for a student budget:
 - **No deployment slots** (Standard tier): a deploy briefly restarts the app instead of swapping in a warm copy.
@@ -350,8 +350,10 @@ Examples: <!-- add links -->[a feature pull request](https://github.com/Josh0123
 | [docs/CONTRACTS.md §12](docs/CONTRACTS.md#12-decisions-that-change-the-part-1-design) | Decisions that change the Part 1 design |
 | [docs/architecture.md](docs/architecture.md) | Layers, State and Observer patterns, booking-creation sequence, error handling |
 | [docs/operations.md](docs/operations.md) | Azure resources, settings, deployment, rollback, logs and limits |
-| docs/security.md | OWASP Top 10 mapping, auth flow, database integrity rules and security tests |
-| docs/accessibility.md | Accessibility and responsive testing evidence |
+| [docs/security.md](docs/security.md) | OWASP Top 10 mapping, auth flow, database integrity rules and security tests |
+| [docs/migrations.md](docs/migrations.md) | Database migration policy and how a schema change reaches production |
+| [docs/accessibility.md](docs/accessibility.md) | Accessibility and responsive testing evidence |
+| [docs/task3/](docs/task3/) | Task 3 final report chapters, user guides (client, staff, admin, technical) and change logs |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Team rules: ownership, branching and commit format |
 
 ## Demo video and presentation
