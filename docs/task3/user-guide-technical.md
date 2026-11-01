@@ -63,8 +63,6 @@ You need a current version of a modern browser with JavaScript and cookies switc
 | Mozilla Firefox (current) | Expected to work; not separately tested |
 | Safari (current) | Expected to work; not separately tested |
 
-Update this table with your own results if you test another browser before submitting.
-
 Screen sizes: the layout adapts from a 360-pixel-wide phone to a desktop. You can use a phone, a tablet or a computer.
 
 Other things you need:
@@ -132,7 +130,7 @@ The system reads these settings. **The values are never in this guide or in the 
 | The site does not load | Wait a minute and reload; then check https://app-exsensic-web.azurewebsites.net/health, which should say Healthy |
 | You found a fault | Tell the team (below) with what you did, the time, the page, and a screenshot |
 
-Support contact: the Exsensic project team, through the course's usual channel. Add the agreed email address or channel here before submitting.
+Support contact: the Exsensic project team, ST10440989@myemeris.edu.za.
 
 Never send your password to anyone, and never include it in a message or screenshot. An administrator will never ask for it.
 
@@ -185,4 +183,4 @@ The sites only work over HTTPS, passwords are stored as hashes, you can only see
 
 ## 13. Document control
 
-Version: 1.0. Owner: Josh (technical sections). Last reviewed: update on the day of submission. Related documents: [operations.md](../operations.md) (how the system is hosted and released), [chapter 7](chapter-07-hosting-cicd-operations.md).
+Version: 1.0. Owner: Josh (technical sections). Last reviewed: 1 November 2026. Related documents: [operations.md](../operations.md) (how the system is hosted and released), [chapter 7](chapter-07-hosting-cicd-operations.md).
