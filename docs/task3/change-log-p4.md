@@ -13,15 +13,15 @@ Related: [chapter 7](chapter-07-hosting-cicd-operations.md), [operations.md](../
 | 3 | Dependency updates | CI/CD 19/20 | Completed |
 | 4 | Review rules and history | Git workflow 10/15 (shared) | Completed |
 | 5 | Safe release of a database change | Deployment 17/20 | Completed |
-| 6 | Monitoring | Hosting stability 14/15 | Completed; evidence screenshot Pending |
+| 6 | Monitoring | Hosting stability 14/15 | Completed |
 | 7 | Final report chapter and user guide | Final report, user guide | Chapter 7 Completed; user guide sections in review |
-| 8 | Production release and smoke checks | CI/CD, hosting stability | Pending |
+| 8 | Production release and smoke checks | CI/CD, hosting stability | Completed (slot swap path not exercised) |
 
 ## 1. Slots and autoscaling
 
 - **Earlier feedback:** Hosting stability 14/15, "slots/autoscaling suggested".
 - **Change made:** a costed tier decision recorded in operations.md section 8 (PR #52) and chapter 7. The production workflow can deploy each app to a slot, test it there and swap it into production, controlled by the repository variable `PRODUCTION_SLOT_NAME` (PR #51). With the variable empty it deploys directly, as before.
-- **Verification:** the workflow change passed `ci`. The slot path has not been run, because B1 has no slots.
+- **Verification:** the workflow change passed `ci` and ran in the v1.1.0 release with `PRODUCTION_SLOT_NAME` unset, so it deployed directly and skipped the swap steps. The slot path has not been run, because B1 has no slots.
 - **Client impact:** once the team approves the extra cost, a release can be swapped in without restarting the live site.
 - **Status:** pipeline support and decision **Completed**. Running slots and autoscale on S1 (about US$21 for seven days, above the US$20 budget alert) is an **Evaluated option**, not implemented.
 
@@ -63,7 +63,7 @@ Related: [chapter 7](chapter-07-hosting-cicd-operations.md), [operations.md](../
 - **Change made:** the code was already wired in, but monitoring was not switched on in Azure. On 2026-10-31 Application Insights (`appi-exsensic`, workspace `log-exsensic`, UAE North) was created and connected to all four apps. The portal's automatic setup failed because it tried to use a resource group and a region that do not exist or are blocked, so both resources were created by hand in the project resource group.
 - **Verification:** the Azure CLI shows `APPLICATIONINSIGHTS_CONNECTION_STRING` on all four apps, and both websites answer `/health` with 200.
 - **Client impact:** the team can see failures and slow requests in production.
-- **Status:** **Completed**. The Live metrics screenshot is **Pending**.
+- **Status:** **Completed**. A dated screenshot of the Application Insights overview is in the evidence file.
 
 ## 7. Final report chapter and user guide
 
@@ -76,10 +76,10 @@ Related: [chapter 7](chapter-07-hosting-cicd-operations.md), [operations.md](../
 ## 8. Production release and smoke checks
 
 - **Earlier feedback:** CI/CD 19/20; Hosting stability 14/15; the Task 3 audit asks for a clean pull request to `main` to production sequence.
-- **Change made:** none yet. The release `release/v1.1.0` carries the Pkcs fix, the slot-aware pipeline, the Dependabot updates, the new migration and the other members' Task 3 work.
-- **Verification:** to be recorded: the pull request, the approval issue, the run ID and commit, the production `/health` and `/health/ready` checks, and one browser booking.
-- **Client impact:** the live system gets the fixes and improvements.
-- **Status:** **Pending**.
+- **Change made:** release v1.1.0 (PR #90) merged `develop` into `main` at commit `cf6171c`. It carries the Pkcs fix, the slot-aware pipeline, the new migration and the other members' Task 3 work. Dependabot updates #79 to #83 were left out on purpose, because #81 does not build without a coordinated EF Core bump and #79 changes the deploy login step.
+- **Verification:** `cd-production` run 41297454238 succeeded (build and deploy). It paused at the approval gate; approval issue #91 was approved and closed on 2026-11-01. The deploy used the direct path, because `PRODUCTION_SLOT_NAME` is not set, so the slot swap steps were skipped. The API smoke test passed after five waiting attempts while the app restarted, the web smoke test passed after three, and the temporary runner access rule was removed. The production website `/health` answers `Healthy` (checked 2026-11-01).
+- **Client impact:** the live system has the fixes and improvements.
+- **Status:** **Completed**. The slot swap path was not exercised.
 
 ## Pull requests in this change log
 
